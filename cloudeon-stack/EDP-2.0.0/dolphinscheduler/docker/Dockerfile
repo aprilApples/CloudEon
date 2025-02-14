@@ -6,9 +6,20 @@ ENV PATH=$PATH:$FLINK_HOME/bin
 
 WORKDIR /tmp
 
+
+# 新增seatunnel组件
+ENV SEATUNNEL_HOME=/opt/seatunnel
+ENV PATH=$PATH:$SEATUNNEL_HOME
+
+RUN tar -xvf /home/software/apache-seatunnel-2.3.5.tar -C /opt \
+    && mv /opt/*seatunnel*  $SEATUNNEL_HOME
+
 RUN wget https://mirrors.huaweicloud.com/apache/flink/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_2.12.tgz \
     && tar -zxvf flink-*.tgz -C /opt \
     && rm -f flink-*.tgz && mv /opt/flink-*  ${FLINK_HOME}
+
+# flink 增加jar包
+COPY /home/software/flink/commons-cli-1.4.jar ${FLINK_HOME}/lib
 
 ENV SPARK_HOME=/opt/spark
 ENV SPARK_VERSION=3.2.3
@@ -45,9 +56,12 @@ ENV DOLPHINSCHEDULER_VERSION=3.2.2
 ENV PATH=$PATH:$DOLPHINSCHEDULER_HOME/bin
 
 
-RUN wget https://mirrors.huaweicloud.com/apache/dolphinscheduler/${DOLPHINSCHEDULER_VERSION}/apache-dolphinscheduler-${DOLPHINSCHEDULER_VERSION}-bin.tar.gz \
-    && tar -zxvf apache-dolphinscheduler-*.tar.gz -C /opt \
-    && rm -f apache-dolphinscheduler-*.tar.gz && mv /opt/*dolphinscheduler*  $DOLPHINSCHEDULER_HOME
+#RUN wget https://mirrors.huaweicloud.com/apache/dolphinscheduler/${DOLPHINSCHEDULER_VERSION}/apache-dolphinscheduler-${DOLPHINSCHEDULER_VERSION}-bin.tar.gz \
+#    && tar -zxvf apache-dolphinscheduler-*.tar.gz -C /opt \
+#    && rm -f apache-dolphinscheduler-*.tar.gz && mv /opt/*dolphinscheduler*  $DOLPHINSCHEDULER_HOME
+RUN tar -zxvf /home/software/dolphinscheduler/apache-dolphinscheduler-dev-SNAPSHOT-bin.tar.gz -C /opt \
+    && mv /opt/*dolphinscheduler*  $DOLPHINSCHEDULER_HOME
+
 
 RUN wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.28/mysql-connector-java-8.0.28.jar \
     && cp mysql-connector-java-8.0.28.jar $DOLPHINSCHEDULER_HOME/alert-server/libs/mysql-connector-java-8.0.28.jar \
