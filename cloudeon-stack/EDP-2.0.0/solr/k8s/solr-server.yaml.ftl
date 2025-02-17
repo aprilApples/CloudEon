@@ -109,7 +109,8 @@ spec:
         command: ["/bin/bash","-c"]
         args:
           - |
-            /bin/bash /opt/global/bootstrap.sh;
+            /bin/bash /opt/global/bootstrap.sh && \
+            /bin/bash /opt/service-common/bootstrap.sh;
 <#--暂时先不考虑探针-->
 <#--        readinessProbe:-->
 <#--          exec:-->
@@ -175,7 +176,7 @@ spec:
         name: "timezone"
       - name: global-service-common
         configMap:
-          name: global-service-common
+          name: global-render-config
       - name: global-render-config
         configMap:
           name: global-render-config
@@ -187,10 +188,10 @@ spec:
           name: global-copy-filebeat-config
       - name: service-render
         configMap:
-          name: zookeeper-service-render
+          name: solr-service-render
       - name: service-common
         configMap:
-          name: zookeeper-service-common
+          name: solr-service-common
       - name: "workspace"
         hostPath:
           type: DirectoryOrCreate

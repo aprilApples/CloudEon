@@ -1,15 +1,18 @@
 #!/bin/bash
 set -e
 
+mkdir -p /conf
 mkdir -p /workspace/logs
 
-\cp -f /opt/service-render-output/myid /data/1/
-\cp -f /opt/service-render-output/zoo.cfg $ZOOKEEPER_HOME/conf/
-\cp -f /opt/service-render-output/zookeeper-env.sh $ZOOKEEPER_HOME/conf/
+# Tips: 这里的 service-render-output/xxx 就是 service-render 目录下的 freemarker 模板文件编译出来的！
+#\cp -f /opt/service-render-output/solr.yaml.ftl $SOLR_HOME/conf/
 
-$ZOOKEEPER_HOME/bin/zkServer.sh start
+$SOLR_HOME/bin/solr start -force
 
 sleep 5
+
+ln -s /var/solr/logs /workspace/logs
+
 
 until find /workspace/logs -mmin -1 -type f -name '*.log' ! -name '*gc*' | grep -q .
 do
@@ -20,12 +23,3 @@ find /workspace/logs -mmin -1 -type f -name '*.log' ! -name '*gc*' -exec tail -F
 
 echo "---------------------------------------------开始----------------------------------------------"
 tail -f /dev/null
-
-# 功能测试，不会自动执行
-$ZOOKEEPER_HOME/bin/zkCli.sh  -server localhost:$ZK_CLIENT_PORT
-ls /
-create /tmp1
-ls /
-delete /tmp1
-ls /
-quit

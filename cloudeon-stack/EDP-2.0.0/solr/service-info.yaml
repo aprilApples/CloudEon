@@ -40,7 +40,7 @@ customConfigFiles: []
 configurations:
   - name: serverImage
     description: "服务镜像"
-    recommendExpression: "solr:8.11.4"
+    recommendExpression: "gh-solr:8.11.4_v1"
     valueType: InputString
     configurableInWizard: true
     tag: "镜像"
@@ -61,15 +61,14 @@ configurations:
   - name: solr.heap
     recommendExpression: 9000
     valueType: InputNumber
-    unit: MILLISECONDS
     configurableInWizard: true
     description: "Apache Solr 应用程序堆内存大小的环境变量"
     tag: "常用参数"
 
   - name: solr.zookeeper.host
-    recommendExpression: "zkServer1:2181,zkServer2:2181,zkServer3:2181"
+#    recommendExpression: "zkServer1:2181,zkServer2:2181,zkServer3:2181"
+    recommendExpression: "10.188.15.204:2181,10.188.15.205:2181,10.188.15.206:2181"
     valueType: InputString
-    unit: MILLISECONDS
     configurableInWizard: true
     description: "Solr 连接zookeeper的地址"
     tag: "常用参数"
