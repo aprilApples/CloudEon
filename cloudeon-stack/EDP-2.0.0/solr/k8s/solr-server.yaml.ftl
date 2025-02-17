@@ -50,6 +50,7 @@ spec:
                 podConflictName: "${roleServiceFullName}"
             topologyKey: "kubernetes.io/hostname"
       hostPID: false
+      <#--Pod 中的容器将共享宿主机的网络接口、IP 地址和端口空间-->
       hostNetwork: true
       nodeSelector:
         ${roleServiceFullName}: "true"
@@ -108,40 +109,44 @@ spec:
         command: ["/bin/bash","-c"]
         args:
           - |
-            /bin/bash /opt/global/bootstrap.sh && \
-            /bin/bash /opt/service-common/bootstrap.sh;
-        readinessProbe:
-          exec:
-            command:
-            - "/bin/bash"
-            - "/opt/service-common/readiness.sh"
-          failureThreshold: 3
-          initialDelaySeconds: 3
-          periodSeconds: 30
-          successThreshold: 1
-          timeoutSeconds: 15
-        resources:
-          requests:
-            memory: "${conf['zookeeper.container.request.memory']}Mi"
-            cpu: "${conf['zookeeper.container.request.cpu']}"
-          limits:
-            memory: "${conf['zookeeper.container.limit.memory']}Mi"
-            cpu: "${conf['zookeeper.container.limit.cpu']}"
+            /bin/bash /opt/global/bootstrap.sh;
+<#--暂时先不考虑探针-->
+<#--        readinessProbe:-->
+<#--          exec:-->
+<#--            command:-->
+<#--            - "/bin/bash"-->
+<#--            - "/opt/service-common/readiness.sh"-->
+<#--          failureThreshold: 3-->
+<#--          initialDelaySeconds: 3-->
+<#--          periodSeconds: 30-->
+<#--          successThreshold: 1-->
+<#--          timeoutSeconds: 15-->
+<#--        resources:-->
+<#--          requests:-->
+<#--            memory: "${conf['zookeeper.container.request.memory']}Mi"-->
+<#--            cpu: "${conf['zookeeper.container.request.cpu']}"-->
+<#--          limits:-->
+<#--            memory: "${conf['zookeeper.container.limit.memory']}Mi"-->
+<#--            cpu: "${conf['zookeeper.container.limit.cpu']}"-->
         env:
         - name: NODE_NAME
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        - name: MEM_LIMIT
-          valueFrom:
-            resourceFieldRef:
-              resource: limits.memory
+<#--        - name: MEM_LIMIT-->
+<#--          valueFrom:-->
+<#--            resourceFieldRef:-->
+<#--              resource: limits.memory-->
         - name: RENDER_TPL_DIR
           value: "/opt/service-render"
         - name: RENDER_MODEL
           value: "/opt/service-common/values.json"
         - name: ZK_CLIENT_PORT
-          value: "${conf["zookeeper.client.port"]}"
+          value: "${conf["solr.port"]}"
+        - name: SOLR_HEAP
+          value: "${conf["solr.heap"]}"
+        - name: ZK_HOST
+          value: "${conf["solr.zookeeper.host"]}"
         volumeMounts:
         - mountPath: "/etc/localtime"
           name: "timezone"

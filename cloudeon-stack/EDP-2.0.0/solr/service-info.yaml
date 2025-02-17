@@ -1,34 +1,46 @@
-name: ZOOKEEPER
-label: "ZooKeeper"
-description: "分布式协调系统"
-version: 3.7.1
+name: SOLR
+label: "solr"
+description: "企业级的搜索引擎系统"
+# 版本号
+version: 8.11.4
 
 dependencies:
   - "GLOBAL"
+  - "HDFS"
+  - "ZOOKEEPER"
 
 supportKerberos: false
 
+# grafana面板的uid，需与实际要注入的grafana面板uid匹配，可设置为""关闭监控面板
 dashboard:
-  uid: zookeeper001
+  uid: ""
 
 roles:
-  - name: ZOOKEEPER_SERVER
-    label: "Zookeeper Server"
-    roleFullName: "zookeeper-server"
-    linkExpression: ""
+  # 角色名称
+  - name: SOLR_SERVER
+    # 角色用于显示的名称
+    label: "Solr Server"
+    # 角色全名，用于注入k8s作为标识
+    roleFullName: "solr-server"
+    # 访问链接，localhostname会被替换成真实的hostname或ip
+    linkExpression: "http://${localhostname}:${conf['solr.port']}/solr/#/"
     sortNum: 1
+    # 角色类型，目前支持JOB、HELM_CHART、DEPLOYMENT、EMPTY（不会试图生成对应k8s资源）
     type: DEPLOYMENT
-
+    # 是否需要奇数节点数
     needOdd: true
+    # 最小节点数
     minNum: 3
 
-customConfigFiles:
-  - zoo.cfg
+# 自定义配置文件
+# 用户部署的时候可以给这些文件添加key-value，组件开发者需将这些key-value添加到对应文件里
+customConfigFiles: []
 
+# 自定义配置项，是模型变量的主要来源
 configurations:
   - name: serverImage
     description: "服务镜像"
-    recommendExpression: "registry.cn-guangzhou.aliyuncs.com/bigdata200/zookeeper:3.7.1"
+    recommendExpression: "solr:8.11.4"
     valueType: InputString
     configurableInWizard: true
     tag: "镜像"
@@ -40,133 +52,25 @@ configurations:
     configurableInWizard: true
     tag: "资源管理"
 
-  - name: zookeeper.container.limit.cpu
-    description: "Zookeeper Server容器的CPU使用限额"
-    recommendExpression: 1.0
-    valueType: InputNumber
-    configurableInWizard: true
-    tag: "资源管理"
-
-  - name: zookeeper.container.limit.memory
-    description: "Zookeeper Server容器的内存使用限额，单位MB"
-    recommendExpression: 2048
-    valueType: InputNumber
-    unit: Mi
-    configurableInWizard: true
-    tag: "资源管理"
-
-  - name: zookeeper.container.request.cpu
-    description: "Zookeeper Server容器的CPU请求量"
-    recommendExpression: 0.2
-    valueType: InputNumber
-    configurableInWizard: true
-    tag: "资源管理"
-
-  - name: zookeeper.container.request.memory
-    description: "Zookeeper Server容器的内存请求量，单位MB"
-    recommendExpression: 1024
-    valueType: InputNumber
-    unit: Mi
-    configurableInWizard: true
-    tag: "资源管理"
-
-  - name: zookeeper.jvm.memory.percentage
-    description: "Zookeeper Server JVM占容器内存限额的百分比"
-    recommendExpression: 75
-    valueType: InputNumber
-    unit: ".0"
-    configurableInWizard: true
-    tag: "资源管理"
-
-  - name: zookeeper.peer.communicate.port
-    recommendExpression: 2888
-    valueType: InputNumber
-    configurableInWizard: true
-    description: ""
-    label: ""
-    tag: "端口"
-
-
-  - name: zookeeper.client.port
-    recommendExpression: 2181
+  - name: solr.port
+    recommendExpression: 8983
     valueType: InputNumber
     configurableInWizard: true
     tag: "端口"
 
-  - name: zookeeper.leader.elect.port
-    recommendExpression: 3888
-    valueType: InputNumber
-    configurableInWizard: true
-    tag: "端口"
-
-  - name: zookeeper.jmxremote.port
-    recommendExpression: 9911
-    valueType: InputNumber
-    configurableInWizard: true
-    tag: "端口"
-
-  - name: zookeeper.metrics.port
-    recommendExpression: 2187
-    valueType: InputNumber
-    configurableInWizard: true
-    tag: "端口"
-
-  - name: tickTime
+  - name: solr.heap
     recommendExpression: 9000
     valueType: InputNumber
     unit: MILLISECONDS
-    confFile: "zoo.cfg"
     configurableInWizard: true
-    label: "心跳时间"
-    description: "Zookeeper服务器与客户端心跳时间，单位毫秒"
+    description: "Apache Solr 应用程序堆内存大小的环境变量"
     tag: "常用参数"
 
-  - name: initLimit
-    recommendExpression: 10
-    valueType: InputNumber
-    confFile: "zoo.cfg"
-    configurableInWizard: true
-    tag: "常用参数"
-
-
-  - name: syncLimit
-    recommendExpression: 5
-    valueType: InputNumber
-    confFile: "zoo.cfg"
-    configurableInWizard: true
-    tag: "常用参数"
-
-
-  - name: maxClientCnxns
-    recommendExpression: 0
-    valueType: InputNumber
-    confFile: "zoo.cfg"
-    tag: "常用参数"
-
-  - name: sasl.oauth2.enabled
-    recommendExpression: true
-    valueType: Switch
-    tag: "安全"
-
-
-  - name: extendedTypesEnabled
-    recommendExpression: false
-    valueType: Switch
-    confFile: "zoo.cfg"
-    tag: "高级参数"
-
-
-  - name: 4lw.commands.whitelist
-    recommendExpression: "*"
+  - name: solr.zookeeper.host
+    recommendExpression: "zkServer1:2181,zkServer2:2181,zkServer3:2181"
     valueType: InputString
-    confFile: "zoo.cfg"
-    label: "指令白名单"
-    description: "用于控制指令白名单"
-    tag: "安全"
-
-  - name: znode.container.checkIntervalMs
-    recommendExpression: 1000
-    valueType: InputNumber
     unit: MILLISECONDS
-    tag: "高级参数"
+    configurableInWizard: true
+    description: "Solr 连接zookeeper的地址"
+    tag: "常用参数"
 
