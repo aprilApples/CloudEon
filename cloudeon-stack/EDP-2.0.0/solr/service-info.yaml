@@ -40,7 +40,7 @@ customConfigFiles: []
 configurations:
   - name: serverImage
     description: "服务镜像"
-    recommendExpression: "gh-solr:8.11.4_v1"
+    recommendExpression: "gh-solr:8.11.4_v2"
     valueType: InputString
     configurableInWizard: true
     tag: "镜像"
@@ -76,14 +76,14 @@ configurations:
 
   - name: solr.container.limit.cpu
     description: "solr Server容器的CPU使用限额"
-    recommendExpression: 1.0
+    recommendExpression: 2.0
     valueType: InputNumber
     configurableInWizard: true
     tag: "资源管理"
 
   - name: solr.container.limit.memory
     description: "solr Server容器的内存使用限额，单位MB"
-    recommendExpression: 2048
+    recommendExpression: 4096
     valueType: InputNumber
     unit: Mi
     configurableInWizard: true
@@ -98,7 +98,7 @@ configurations:
 
   - name: solr.container.request.memory
     description: "solr Server容器的内存请求量，单位MB"
-    recommendExpression: 1024
+    recommendExpression: 2048
     valueType: InputNumber
     unit: Mi
     configurableInWizard: true

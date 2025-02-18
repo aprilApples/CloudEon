@@ -5,11 +5,11 @@ mkdir -p /conf
 mkdir -p /workspace/logs
 
 # Tips: 这里的 service-render-output/xxx 就是 service-render 目录下的 freemarker 模板文件编译出来的！
-#\cp -f /opt/service-render-output/solr.yaml.ftl $SOLR_HOME/conf/
+\cp -f /opt/service-render-output/limits.conf /etc/security/limits.conf
 
 ln -s /workspace/logs server/logs
 
-$SOLR_HOME/bin/solr start -force
+$SOLR_HOME/bin/solr start -force -s $SOLR_HOME/server/solr
 
 sleep 5
 
