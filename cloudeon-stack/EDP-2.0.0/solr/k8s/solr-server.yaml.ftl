@@ -122,30 +122,32 @@ spec:
 <#--          periodSeconds: 30-->
 <#--          successThreshold: 1-->
 <#--          timeoutSeconds: 15-->
-<#--        resources:-->
-<#--          requests:-->
-<#--            memory: "${conf['zookeeper.container.request.memory']}Mi"-->
-<#--            cpu: "${conf['zookeeper.container.request.cpu']}"-->
-<#--          limits:-->
-<#--            memory: "${conf['zookeeper.container.limit.memory']}Mi"-->
-<#--            cpu: "${conf['zookeeper.container.limit.cpu']}"-->
+        resources:
+          requests:
+            memory: "${conf['solr.container.request.memory']}Mi"
+            cpu: "${conf['solr.container.request.cpu']}"
+          limits:
+            memory: "${conf['solr.container.limit.memory']}Mi"
+            cpu: "${conf['solr.container.limit.cpu']}"
         env:
         - name: NODE_NAME
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-<#--        - name: MEM_LIMIT-->
-<#--          valueFrom:-->
-<#--            resourceFieldRef:-->
-<#--              resource: limits.memory-->
+        - name: MEM_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
         - name: RENDER_TPL_DIR
           value: "/opt/service-render"
         - name: RENDER_MODEL
           value: "/opt/service-common/values.json"
+        - name: ROLE_FULL_NAME
+          value: "${roleFullName}"
         - name: ZK_CLIENT_PORT
           value: "${conf["solr.port"]}"
         - name: SOLR_HEAP
-          value: "${conf["solr.heap"]}"
+          value: "${conf["solr.heap"]}M"
         - name: ZK_HOST
           value: "${conf["solr.zookeeper.host"]}"
         volumeMounts:
@@ -176,7 +178,7 @@ spec:
         name: "timezone"
       - name: global-service-common
         configMap:
-          name: global-render-config
+          name: global-service-common
       - name: global-render-config
         configMap:
           name: global-render-config

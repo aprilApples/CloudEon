@@ -59,17 +59,47 @@ configurations:
     tag: "端口"
 
   - name: solr.heap
-    recommendExpression: 9000
+    recommendExpression: 2048
     valueType: InputNumber
+    unit: Mi
     configurableInWizard: true
     description: "Apache Solr 应用程序堆内存大小的环境变量"
     tag: "常用参数"
 
   - name: solr.zookeeper.host
-#    recommendExpression: "zkServer1:2181,zkServer2:2181,zkServer3:2181"
+    #    recommendExpression: "zkServer1:2181,zkServer2:2181,zkServer3:2181"
     recommendExpression: "10.188.15.204:2181,10.188.15.205:2181,10.188.15.206:2181"
     valueType: InputString
     configurableInWizard: true
     description: "Solr 连接zookeeper的地址"
     tag: "常用参数"
 
+  - name: solr.container.limit.cpu
+    description: "solr Server容器的CPU使用限额"
+    recommendExpression: 1.0
+    valueType: InputNumber
+    configurableInWizard: true
+    tag: "资源管理"
+
+  - name: solr.container.limit.memory
+    description: "solr Server容器的内存使用限额，单位MB"
+    recommendExpression: 2048
+    valueType: InputNumber
+    unit: Mi
+    configurableInWizard: true
+    tag: "资源管理"
+
+  - name: solr.container.request.cpu
+    description: "solr Server容器的CPU请求量"
+    recommendExpression: 0.2
+    valueType: InputNumber
+    configurableInWizard: true
+    tag: "资源管理"
+
+  - name: solr.container.request.memory
+    description: "solr Server容器的内存请求量，单位MB"
+    recommendExpression: 1024
+    valueType: InputNumber
+    unit: Mi
+    configurableInWizard: true
+    tag: "资源管理"
