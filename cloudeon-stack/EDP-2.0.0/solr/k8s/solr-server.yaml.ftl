@@ -111,17 +111,16 @@ spec:
           - |
             /bin/bash /opt/global/bootstrap.sh && \
             /bin/bash /opt/service-common/bootstrap.sh;
-<#--暂时先不考虑探针-->
-<#--        readinessProbe:-->
-<#--          exec:-->
-<#--            command:-->
-<#--            - "/bin/bash"-->
-<#--            - "/opt/service-common/readiness.sh"-->
-<#--          failureThreshold: 3-->
-<#--          initialDelaySeconds: 3-->
-<#--          periodSeconds: 30-->
-<#--          successThreshold: 1-->
-<#--          timeoutSeconds: 15-->
+        readinessProbe:
+          exec:
+            command:
+            - "/bin/bash"
+            - "/opt/service-common/readiness.sh"
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
         resources:
           requests:
             memory: "${conf['solr.container.request.memory']}Mi"
@@ -144,12 +143,10 @@ spec:
           value: "/opt/service-common/values.json"
         - name: ROLE_FULL_NAME
           value: "${roleFullName}"
-        - name: ZK_CLIENT_PORT
+        - name: SOLR_PORT
           value: "${conf["solr.port"]}"
         - name: SOLR_HEAP
           value: "${conf["solr.heap"]}M"
-        - name: ZK_HOST
-          value: "${conf["solr.zookeeper.host"]}"
         volumeMounts:
         - mountPath: "/etc/localtime"
           name: "timezone"

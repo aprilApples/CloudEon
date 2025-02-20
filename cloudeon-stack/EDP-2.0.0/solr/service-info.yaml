@@ -34,7 +34,8 @@ roles:
 
 # 自定义配置文件
 # 用户部署的时候可以给这些文件添加key-value，组件开发者需将这些key-value添加到对应文件里
-customConfigFiles: []
+customConfigFiles:
+  - solr.xml
 
 # 自定义配置项，是模型变量的主要来源
 configurations:
@@ -66,14 +67,6 @@ configurations:
     description: "Apache Solr 应用程序堆内存大小的环境变量"
     tag: "常用参数"
 
-  - name: solr.zookeeper.host
-    #    recommendExpression: "zkServer1:2181,zkServer2:2181,zkServer3:2181"
-    recommendExpression: "10.188.15.204:2181,10.188.15.205:2181,10.188.15.206:2181"
-    valueType: InputString
-    configurableInWizard: true
-    description: "Solr 连接zookeeper的地址"
-    tag: "常用参数"
-
   - name: solr.container.limit.cpu
     description: "solr Server容器的CPU使用限额"
     recommendExpression: 2.0
@@ -103,3 +96,99 @@ configurations:
     unit: Mi
     configurableInWizard: true
     tag: "资源管理"
+
+  - name: metrics
+    recommendExpression: "true"
+    valueType: Switch
+    configurableInWizard: true
+    description: "Solr 监控"
+    confFile: "solr.xml"
+    tag: "常用参数"
+
+  - name: maxBooleanClauses
+    recommendExpression: 1024
+    valueType: InputNumber
+    configurableInWizard: true
+    description: "用于限制布尔查询中可以使用的最大子句数"
+    confFile: "solr.xml"
+    tag: "常用参数"
+
+  - name: solr.solrcloud.hostContext
+    recommendExpression: "solr"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Solr URL 上下文路径"
+    confFile: "solr.xml"
+    tag: "常用参数"
+
+  - name: solr.solrcloud.genericCoreNodeNames
+    recommendExpression: "true"
+    valueType: Switch
+    configurableInWizard: true
+    description: "Solr 默认节点名称不是基于节点的地址，而是基于标识核心的通用名称"
+    confFile: "solr.xml"
+    tag: "常用参数"
+
+  - name: solr.solrcloud.zkClientTimeout
+    recommendExpression: 30000
+    valueType: InputNumber
+    configurableInWizard: true
+    description: "Solr 设置ZooKeeper 服务器连接的超时时间"
+    confFile: "solr.xml"
+    tag: "常用参数"
+
+  - name: solr.solrcloud.distribUpdateSoTimeout
+    recommendExpression: 600000
+    valueType: InputNumber
+    configurableInWizard: true
+    description: "Solr 集群内部更新的 socket 连接超时时间"
+    confFile: "solr.xml"
+    tag: "常用参数"
+
+  - name: solr.solrcloud.distribUpdateConnTimeout
+    recommendExpression: 60000
+    valueType: InputNumber
+    configurableInWizard: true
+    description: "Solr 集群内部更新的连接超时时间"
+    confFile: "solr.xml"
+    tag: "常用参数"
+
+  - name: solr.solrcloud.zkCredentialsProvider
+    recommendExpression: "org.apache.solr.common.cloud.DefaultZkCredentialsProvider"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Solr 用于设置 Zookeeper 访问控制"
+    confFile: "solr.xml"
+    tag: "常用参数"
+
+  - name: solr.solrcloud.zkACLProvider
+    recommendExpression: "org.apache.solr.common.cloud.DefaultZkACLProvider"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Solr 用于设置 Zookeeper 访问控制"
+    confFile: "solr.xml"
+    tag: "常用参数"
+
+  - name: solr.shardHandlerFactory.socketTimeout
+    recommendExpression: 600000
+    valueType: InputNumber
+    configurableInWizard: true
+    description: "Solr 群集内查询和管理类请求的读取超时时间"
+    confFile: "solr.xml"
+    tag: "常用参数"
+
+  - name: solr.shardHandlerFactory.connTimeout
+    recommendExpression: 60000
+    valueType: InputNumber
+    configurableInWizard: true
+    description: "Solr 群集内查询和管理类请求的连接超时时间"
+    confFile: "solr.xml"
+    tag: "常用参数"
+
+  - name: solr.shardHandlerFactory.shardsWhitelist
+    recommendExpression: ""
+    valueType: InputString
+    configurableInWizard: true
+    description: "Solr 在非集群模型下执行分布式搜索的 Solr 服务白名单列表"
+    confFile: "solr.xml"
+    tag: "常用参数"

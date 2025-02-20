@@ -45,7 +45,14 @@
 # Set the ZooKeeper connection string if using an external ZooKeeper ensemble
 # e.g. host1:2181,host2:2181/chroot
 # Leave empty if not using SolrCloud
-#ZK_HOST=""
+<#--handle dependent.zookeeper-->
+<#if dependencies.ZOOKEEPER??>
+    <#assign zookeeper=dependencies.ZOOKEEPER quorum=[]>
+    <#list zookeeper.serviceRoles['ZOOKEEPER_SERVER'] as role>
+        <#assign quorum += [role.hostname + ":" + zookeeper.conf["zookeeper.client.port"]]>
+    </#list>
+</#if>
+ZK_HOST=${quorum?join(",")}
 
 # Set to true if your ZK host has a chroot path, and you want to create it automatically.
 #ZK_CREATE_CHROOT=true
@@ -83,7 +90,7 @@
 
 # Path to a directory for Solr to store cores and their data. By default, Solr will use server/solr
 # If solr.xml is not stored in ZooKeeper, this directory needs to contain solr.xml
-#SOLR_HOME=
+SOLR_HOME=/opt/solr/server/solr
 
 # Path to a directory that Solr will use as root for data folders for each core.
 # If not set, defaults to <instance_dir>/data. Overridable per core through 'dataDir' core property
