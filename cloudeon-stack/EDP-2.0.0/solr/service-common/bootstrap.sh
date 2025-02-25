@@ -8,19 +8,23 @@ mkdir -p /workspace/logs
 \cp -f /opt/service-render-output/limits.conf /etc/security/limits.conf
 \cp -f /opt/service-render-output/solr.xml $SOLR_HOME/server/solr/solr.xml
 \cp -f /opt/service-render-output/solr.in.sh $SOLR_HOME/bin/solr.in.sh
+\cp -f /opt/service-render-output/solr_server_env.sh $SOLR_HOME
 
 ln -s /workspace/logs server/logs
 
 $SOLR_HOME/bin/solr start -force
 
-sleep 5
+source /opt/service-common/start-solr-exporter.sh
 
+sleep 5
 until find /workspace/logs -mmin -1 -type f -name '*.log' ! -name '*gc*' | grep -q .
 do
   echo "`date`: Waiting for logs..."
   sleep 2
 done
+
 find /workspace/logs -mmin -1 -type f -name '*.log' ! -name '*gc*' -exec tail -F {} +
 
 echo "---------------------------------------------开始----------------------------------------------"
+
 tail -f /dev/null

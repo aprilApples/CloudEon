@@ -13,7 +13,7 @@ supportKerberos: false
 
 # grafana面板的uid，需与实际要注入的grafana面板uid匹配，可设置为""关闭监控面板
 dashboard:
-  uid: ""
+  uid: "solr001"
 
 roles:
   # 角色名称
@@ -54,6 +54,7 @@ configurations:
     tag: "资源管理"
 
   - name: solr.port
+    description: "solr Server端口"
     recommendExpression: 8983
     valueType: InputNumber
     configurableInWizard: true
@@ -96,6 +97,13 @@ configurations:
     unit: Mi
     configurableInWizard: true
     tag: "资源管理"
+
+  - name: solr.metrics.port
+    description: "solr Server 监控端口"
+    recommendExpression: 9854
+    valueType: InputNumber
+    configurableInWizard: true
+    tag: "端口"
 
   - name: metrics
     recommendExpression: "true"
@@ -153,21 +161,21 @@ configurations:
     confFile: "solr.xml"
     tag: "常用参数"
 
-  - name: solr.solrcloud.zkCredentialsProvider
-    recommendExpression: "org.apache.solr.common.cloud.DefaultZkCredentialsProvider"
-    valueType: InputString
-    configurableInWizard: true
-    description: "Solr 用于设置 Zookeeper 访问控制"
-    confFile: "solr.xml"
-    tag: "常用参数"
+#  - name: solr.solrcloud.zkCredentialsProvider
+#    recommendExpression: "org.apache.solr.common.cloud.DefaultZkCredentialsProvider"
+#    valueType: InputString
+#    configurableInWizard: true
+#    description: "Solr 用于设置 Zookeeper 访问控制"
+#    confFile: "solr.xml"
+#    tag: "常用参数"
 
-  - name: solr.solrcloud.zkACLProvider
-    recommendExpression: "org.apache.solr.common.cloud.DefaultZkACLProvider"
-    valueType: InputString
-    configurableInWizard: true
-    description: "Solr 用于设置 Zookeeper 访问控制"
-    confFile: "solr.xml"
-    tag: "常用参数"
+#  - name: solr.solrcloud.zkACLProvider
+#    recommendExpression: "org.apache.solr.common.cloud.DefaultZkACLProvider"
+#    valueType: InputString
+#    configurableInWizard: true
+#    description: "Solr 用于设置 Zookeeper 访问控制"
+#    confFile: "solr.xml"
+#    tag: "常用参数"
 
   - name: solr.shardHandlerFactory.socketTimeout
     recommendExpression: 600000

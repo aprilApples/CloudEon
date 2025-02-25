@@ -23,6 +23,15 @@
     <solrcloud>
         <str name="host"></str>
         <int name="hostPort">${conf['solr.port']}</int>
+        <#--handle dependent.zookeeper-->
+        <#if dependencies.ZOOKEEPER??>
+            <#assign zookeeper=dependencies.ZOOKEEPER quorum=[]>
+            <#list zookeeper.serviceRoles['ZOOKEEPER_SERVER'] as role>
+                <#assign quorum += [role.hostname + ":" + zookeeper.conf["zookeeper.client.port"]]>
+            </#list>
+        </#if>
+        <str name="zkHost">${quorum?join(",")}</str>
+
 
         <#list confFiles['solr.xml'] as key, value>
             <#if key?starts_with("solr.solrcloud.")>

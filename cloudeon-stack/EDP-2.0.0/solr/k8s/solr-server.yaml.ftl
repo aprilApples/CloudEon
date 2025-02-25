@@ -145,6 +145,8 @@ spec:
           value: "${roleFullName}"
         - name: SOLR_PORT
           value: "${conf["solr.port"]}"
+        - name: SOLR_METRICS_PORT
+          value: "${conf["solr.metrics.port"]}"
         - name: SOLR_HEAP
           value: "${conf["solr.heap"]}M"
         volumeMounts:
