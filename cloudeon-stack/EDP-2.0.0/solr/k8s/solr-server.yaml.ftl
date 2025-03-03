@@ -111,43 +111,44 @@ spec:
           - |
             /bin/bash /opt/global/bootstrap.sh && \
             /bin/bash /opt/service-common/bootstrap.sh;
-<#--暂时先不考虑探针-->
-<#--        readinessProbe:-->
-<#--          exec:-->
-<#--            command:-->
-<#--            - "/bin/bash"-->
-<#--            - "/opt/service-common/readiness.sh"-->
-<#--          failureThreshold: 3-->
-<#--          initialDelaySeconds: 3-->
-<#--          periodSeconds: 30-->
-<#--          successThreshold: 1-->
-<#--          timeoutSeconds: 15-->
-<#--        resources:-->
-<#--          requests:-->
-<#--            memory: "${conf['zookeeper.container.request.memory']}Mi"-->
-<#--            cpu: "${conf['zookeeper.container.request.cpu']}"-->
-<#--          limits:-->
-<#--            memory: "${conf['zookeeper.container.limit.memory']}Mi"-->
-<#--            cpu: "${conf['zookeeper.container.limit.cpu']}"-->
+        readinessProbe:
+          exec:
+            command:
+            - "/bin/bash"
+            - "/opt/service-common/readiness.sh"
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources:
+          requests:
+            memory: "${conf['solr.container.request.memory']}Mi"
+            cpu: "${conf['solr.container.request.cpu']}"
+          limits:
+            memory: "${conf['solr.container.limit.memory']}Mi"
+            cpu: "${conf['solr.container.limit.cpu']}"
         env:
         - name: NODE_NAME
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-<#--        - name: MEM_LIMIT-->
-<#--          valueFrom:-->
-<#--            resourceFieldRef:-->
-<#--              resource: limits.memory-->
+        - name: MEM_LIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
         - name: RENDER_TPL_DIR
           value: "/opt/service-render"
         - name: RENDER_MODEL
           value: "/opt/service-common/values.json"
-        - name: ZK_CLIENT_PORT
+        - name: ROLE_FULL_NAME
+          value: "${roleFullName}"
+        - name: SOLR_PORT
           value: "${conf["solr.port"]}"
+        - name: SOLR_METRICS_PORT
+          value: "${conf["solr.metrics.port"]}"
         - name: SOLR_HEAP
-          value: "${conf["solr.heap"]}"
-        - name: ZK_HOST
-          value: "${conf["solr.zookeeper.host"]}"
+          value: "${conf["solr.heap"]}M"
         volumeMounts:
         - mountPath: "/etc/localtime"
           name: "timezone"
@@ -176,7 +177,7 @@ spec:
         name: "timezone"
       - name: global-service-common
         configMap:
-          name: global-render-config
+          name: global-service-common
       - name: global-render-config
         configMap:
           name: global-render-config

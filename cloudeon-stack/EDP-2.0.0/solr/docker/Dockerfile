@@ -4,7 +4,7 @@ WORKDIR /tmp
 
 # 新增solr组件
 ENV SOLR_HOME=/opt/solr
-ENV PATH=$PATH:$SOLR_HOME
+ENV PATH=$PATH:$SOLR_HOME/bin
 
 COPY solr-8.11.4.tgz /tmp/
 RUN tar -zxvf /tmp/solr-8.11.4.tgz -C /opt \

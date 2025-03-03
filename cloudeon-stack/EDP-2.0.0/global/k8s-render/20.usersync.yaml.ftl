@@ -14,6 +14,7 @@ data:
     spark,supergroup
     hive,supergroup
     hbase,supergroupp
+    solr,supergroupp
 <#if conf["global.user.list"]??>
 <#assign ugList = conf["global.user.list"]?split(";")>
 <#list ugList as ug>
