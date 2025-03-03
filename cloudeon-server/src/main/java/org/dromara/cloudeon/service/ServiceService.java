@@ -137,7 +137,7 @@ public class ServiceService {
         dataModel.put("serviceFullName", getServiceFullName(serviceInstanceEntity));
         dataModel.put("service", serviceInstanceEntity);
         dataModel.put("runAs", stackServiceEntity.getRunAs());
-        dataModel.put("conf", allConfigEntityList.stream().collect(Collectors.toMap(ServiceInstanceConfigEntity::getName, ServiceInstanceConfigEntity::getValue)));
+        dataModel.put("conf", allConfigEntityList.stream().collect(Collectors.toMap(ServiceInstanceConfigEntity::getName, e -> e.getValue() != null ? e.getValue() : "")));
         dataModel.put("serviceRoles", getServiceRoles(roleInstanceEntities, clusterNodeRepository));
         try {
             dataModel.put("cloudeonURL", "http://" + InetAddress.getLocalHost().getHostAddress() + ":" + environment.getProperty("server.port"));
@@ -195,7 +195,7 @@ public class ServiceService {
             List<ServiceRoleInstanceEntity> roleInstanceEntities = roleInstanceRepository.findByServiceInstanceId(serviceInstanceId);
             Map<String, List<RoleNodeInfo>> serviceRoles = getServiceRoles(roleInstanceEntities, clusterNodeRepository);
             services.put(stackServiceName, ImmutableMap.of(
-                    "conf", allConfigEntityList.stream().collect(Collectors.toMap(ServiceInstanceConfigEntity::getName, ServiceInstanceConfigEntity::getValue)),
+                    "conf", allConfigEntityList.stream().collect(Collectors.toMap(ServiceInstanceConfigEntity::getName, e -> e.getValue() != null ? e.getValue() : "")),
                     "serviceRoles", serviceRoles,
                     "service", serviceInstanceEntity));
         });

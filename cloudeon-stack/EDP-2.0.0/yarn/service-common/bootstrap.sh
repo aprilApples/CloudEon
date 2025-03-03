@@ -8,6 +8,10 @@ mkdir -p /workspace/logs
 \cp -f /opt/service-render-output/* $HADOOP_CONF_DIR
 
 if [[ "${ROLE_FULL_NAME}" == "hadoop-yarn-resourcemanager" ]]; then
+
+  echo "========================enable Ranger ========================"
+  bash $RANGER_HOME/ranger-yarn-plugin/ranger-handle.sh
+
   echo "========================start resourcemanager========================"
   yarn-daemon.sh start resourcemanager
 fi

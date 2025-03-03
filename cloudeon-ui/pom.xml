@@ -14,7 +14,7 @@
     <properties>
         <!--前端打包-->
         <maven-frontend-plugin.version>1.12.0</maven-frontend-plugin.version>
-        <maven-frontend-plugin.nodeVersion>v16.13.1</maven-frontend-plugin.nodeVersion>
+        <maven-frontend-plugin.nodeVersion>v18.18.0</maven-frontend-plugin.nodeVersion>
         <maven-frontend-plugin.yarnVersion>v1.22.19</maven-frontend-plugin.yarnVersion>
         <!--        <maven-frontend-plugin.nodeVersion>v9.9.0</maven-frontend-plugin.nodeVersion>-->
         <!--        <maven-frontend-plugin.npmVersion>6.9.0</maven-frontend-plugin.npmVersion>-->

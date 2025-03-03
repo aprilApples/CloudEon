@@ -1,0 +1,14 @@
+- type: log
+  enabled: true
+  fields:
+    service: RANGER
+    role: RANGER_ADMIN
+  paths:
+    - /workspace/logs/*admin*.log
+  multiline:
+    pattern: '^\[[A-Z]+\] \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} [+-]\d{4}'
+    negate: true
+    match: after
+  close_timeout: 5m
+
+

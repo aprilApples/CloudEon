@@ -41,7 +41,7 @@ customConfigFiles:
 configurations:
   - name: serverImage
     description: "服务镜像"
-    recommendExpression: "registry.cn-guangzhou.aliyuncs.com/bigdata200/hive:3.1.3"
+    recommendExpression: "gohigh/ranger-hive-gh:2.5.0"
     valueType: InputString
     configurableInWizard: true
     tag: "镜像"
@@ -62,30 +62,27 @@ configurations:
     tag: "常用参数"
 
   - name: "javax.jdo.option.ConnectionUserName"
-    recommendExpression: "xxx"
+    recommendExpression: "root"
     valueType: InputString
     configurableInWizard: true
     description: "metastore依赖数据库的登录账户"
-    needChangeInWizard: true
     confFile:  "hive-site.xml"
     tag: "常用参数"
 
   - name: "javax.jdo.option.ConnectionPassword"
-    recommendExpression: "xxx"
+    recommendExpression: "95vQkU88E_tfdS"
     valueType: InputString
     configurableInWizard: true
     description: "metastore依赖数据库的登录密码"
-    needChangeInWizard: true
     confFile:  "hive-site.xml"
     tag: "常用参数"
 
   - name: "javax.jdo.option.ConnectionURL"
-    recommendExpression: "jdbc:mysql://xxx:3306/hive_db_ce?createDatabaseIfNotExist=true&amp;useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false"
+    recommendExpression: "jdbc:mysql://10.188.15.59:3306/hive_metastore?createDatabaseIfNotExist=true&amp;useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false"
     valueType: InputString
     configurableInWizard: true
     description: "metastore依赖数据库的jdbc访问地址"
     confFile:  "hive-site.xml"
-    needChangeInWizard: true
     tag: "常用参数"
 
   - name: "hive.server2.enable.doAs"
@@ -271,4 +268,81 @@ configurations:
     unit: Mi
     configurableInWizard: true
     tag: "资源管理"
+
+  - name: "hive.zookeeper.quorum"
+    recommendExpression: "k8s-node1:2181"
+    valueType: InputString
+    confFile:  "hive-site.xml"
+    tag: "常用参数"
+
+  - name: "ranger.enable"
+    recommendExpression: "true"
+    valueType: Switch
+    configurableInWizard: true
+    description: "是否开启Ranger策略服务"
+    tag: "安全"
+  - name: "ranger.policy.mgr.url"
+    recommendExpression: "http://10.188.15.204:6080"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger策略服务地址"
+    tag: "安全"
+  - name: "ranger.repository.name"
+    recommendExpression: "hive"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger策略存储名称"
+    tag: "安全"
+  - name: "component.install.dir.name"
+    recommendExpression: "/opt/hive"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Hive组件安装地址"
+    tag: "安全"
+  - name: "ranger.xasecure.audit.jdbc.url"
+    recommendExpression: "jdbc:mysql://mysql.com:3306/ambori_ranger"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger服务数据库地址"
+    confFile: "xasecure-audit.xml"
+    tag: "安全"
+  - name: "ranger.xasecure.audit.jdbc.user"
+    recommendExpression: "root"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger服务数据库用户名"
+    confFile: "xasecure-audit.xml"
+    tag: "安全"
+  - name: "ranger.xasecure.audit.jdbc.password"
+    recommendExpression: ""
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger服务数据库密码"
+    confFile: "xasecure-audit.xml"
+    tag: "安全"
+#  - name: "hive.security.authenticator.manager"
+#    recommendExpression: "org.apache.hadoop.hive.ql.security.SessionStateUserAuthenticator"
+#    valueType: InputString
+#    configurableInWizard: true
+#    confFile:  "hive-site.xml"
+#    tag: "安全"
+#  - name: "hive.security.authorization.manager	"
+#    recommendExpression: "org.apache.ranger.authorization.hive.authorizer.RangerHiveAuthorizerFactory"
+#    valueType: InputString
+#    configurableInWizard: true
+#    confFile:  "hive-site.xml"
+#    tag: "安全"
+#  - name: "hive.security.authorization.enabled"
+#    recommendExpression: "true"
+#    valueType: Switch
+#    configurableInWizard: true
+#    confFile:  "hive-site.xml"
+#    tag: "安全"
+#  - name: "hive.conf.restricted.list"
+#    recommendExpression: "hive.security.authorization.enabled,hive.security.authorization.manager,hive.security.authenticator.manager"
+#    valueType: InputString
+#    configurableInWizard: true
+#    confFile:  "hive-site.xml"
+#    tag: "安全"
+
 

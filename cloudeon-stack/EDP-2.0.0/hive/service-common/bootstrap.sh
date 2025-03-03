@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-\cp -f /opt/service-render-output/* $HIVE_HOME/conf/
+\cp -f /opt/service-render-output/hive* $HIVE_HOME/conf/
+\cp -f /opt/service-render-output/init* $HIVE_HOME/conf/
+\cp -f /opt/service-render-output/jmx_prometheus.yaml $HIVE_HOME/conf/
 \cp -f /etc/hdfs-config/* $HADOOP_CONF_DIR
 \cp -f /etc/yarn-config/* $HADOOP_CONF_DIR
 mkdir -p /workspace/logs
@@ -18,6 +20,12 @@ if [[ "${ROLE_FULL_NAME}" == "hive-metastore" ]]; then
     nohup hive --service metastore >> /workspace/logs/metastore_`date '+%Y-%m-%d'`.log 2>&1 &
 fi
 if [[ "${ROLE_FULL_NAME}" == "hive-server2" ]]; then
+    echo "========================enable Ranger ========================"
+    \cp -f /opt/service-render-output/ranger-install.properties $RANGER_HOME/ranger-hive-plugin/install.properties
+    \cp -f /opt/service-render-output/ranger-xasecure-audit.xml $RANGER_HOME/ranger-hive-plugin/install/conf.templates/enable/xasecure-audit.xml
+    \cp -f /opt/service-render-output/ranger-handle.sh $RANGER_HOME/ranger-hive-plugin/
+    bash $RANGER_HOME/ranger-hive-plugin/ranger-handle.sh
+
     echo "========================start hive server2========================"
     nohup hive --service hiveserver2 >> /workspace/logs/server2_`date '+%Y-%m-%d'`.log 2>&1 &
 fi

@@ -22,6 +22,10 @@ if [[ "${ROLE_FULL_NAME}" == "hadoop-hdfs-journalnode" ]]; then
   hadoop-daemon.sh start journalnode
 fi
 if [[ "${ROLE_FULL_NAME}" == "hadoop-hdfs-namenode" ]]; then
+
+  echo "========================enable Ranger ========================"
+  bash $RANGER_HOME/ranger-hdfs-plugin/ranger-handle.sh
+
   source /opt/service-render-output/namenode-format.sh
   echo "========================start namenode========================"
   hadoop-daemon.sh  start namenode

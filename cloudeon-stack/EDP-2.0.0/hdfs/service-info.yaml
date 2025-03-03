@@ -66,7 +66,7 @@ customConfigFiles:
 configurations:
   - name: serverImage
     description: "服务镜像"
-    recommendExpression: "registry.cn-guangzhou.aliyuncs.com/bigdata200/hadoop:3.3.4"
+    recommendExpression: "gohigh/ranger-hadoop-gh:2.5.0"
     valueType: InputString
     configurableInWizard: true
     tag: "镜像"
@@ -343,4 +343,70 @@ configurations:
     unit: Mi
     configurableInWizard: true
     tag: "资源管理"
+
+
+  - name: "ranger.enable"
+    recommendExpression: "true"
+    valueType: Switch
+    configurableInWizard: true
+    description: "是否开启Ranger策略服务"
+    tag: "安全"
+  - name: "ranger.policy.mgr.url"
+    recommendExpression: "http://10.188.15.204:6080"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger策略服务地址"
+    tag: "安全"
+  - name: "ranger.repository.name"
+    recommendExpression: "hdfs"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger策略存储名称"
+    tag: "安全"
+  - name: "component.install.dir.name"
+    recommendExpression: "/opt/hadoop"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Hadoop组件安装地址"
+    tag: "安全"
+  - name: "ranger.xasecure.audit.jdbc.url"
+    recommendExpression: "jdbc:mysql://mysql.com:3306/ambori_ranger"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger服务数据库地址"
+    confFile: "xasecure-audit.xml"
+    tag: "安全"
+  - name: "ranger.xasecure.audit.jdbc.user"
+    recommendExpression: "root"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger服务数据库用户名"
+    confFile: "xasecure-audit.xml"
+    tag: "安全"
+  - name: "ranger.xasecure.audit.jdbc.password"
+    recommendExpression: ""
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger服务数据库密码"
+    confFile: "xasecure-audit.xml"
+    tag: "安全"
+  - name: "dfs.permissions"
+    recommendExpression: "true"
+    valueType: Switch
+    configurableInWizard: true
+    confFile:  "hdfs-site.xml"
+    tag: "安全"
+  - name: "dfs.namenode.acls.enabled"
+    recommendExpression: "true"
+    valueType: Switch
+    configurableInWizard: true
+    confFile:  "hdfs-site.xml"
+    tag: "安全"
+  - name: "dfs.namenode.inode.attributes.provider.class"
+    recommendExpression: "org.apache.ranger.authorization.hadoop.RangerHdfsAuthorizer"
+    valueType: InputString
+    configurableInWizard: true
+    confFile:  "hdfs-site.xml"
+    tag: "安全"
+
 

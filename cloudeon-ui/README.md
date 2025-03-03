@@ -29,6 +29,11 @@ npm start
 
 6. 生产环境打包
 ```bash
+set NODE_OPTIONS=--openssl-legacy-provider
+```
+
+
+```bash
 npm run build
 ```
 

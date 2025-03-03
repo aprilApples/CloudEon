@@ -33,7 +33,7 @@ spring:
       max-file-size: 209715200
       max-request-size: 209715200
 cloudeon:
-  home.path: ${CLOUDEON_HOME:D:/Dev/myProject/CloudEonDev}
+  home.path: ${CLOUDEON_HOME:D:/project2025/code/CloudEon}
   stack.load.path: ${cloudeon.home.path}/cloudeon-stack
   task.log: ${java.io.tmpdir}/log
   work.home: ${java.io.tmpdir}/work
@@ -45,9 +45,9 @@ spring:
       on-profile: mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB_NAME:cloudeon}?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://${MYSQL_HOST:mysql.gh.com}:${MYSQL_PORT:3306}/${MYSQL_DB_NAME:cloudeon}?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:1qaz@WSX}
+    password: ${MYSQL_PASSWORD:95vQkU88E_tfdS}
 ---
 spring:
   config:

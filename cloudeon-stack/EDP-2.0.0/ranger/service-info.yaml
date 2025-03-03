@@ -1,0 +1,206 @@
+name: RANGER
+label: "Ranger"
+description: "集群的细粒度访问控制工具"
+version: 2.5.0
+dependencies:
+
+supportKerberos: false
+
+dashboard:
+  uid: ""
+
+roles:
+  - name: RANGER_ADMIN
+    label: "Ranger Admin"
+    roleFullName: "ranger-admin"
+    sortNum: 1
+    type: DEPLOYMENT
+    minNum : 1
+    linkExpression: "http://${localhostname}:${conf['ranger.service.http.port']}"
+
+customConfigFiles: []
+
+configurations:
+  - name: serverImage
+    description: "服务镜像"
+    recommendExpression: "gohigh/ranger:2.5.0"
+    valueType: InputString
+    configurableInWizard: true
+    tag: "镜像"
+  - name: data.path.list
+    description: "持久化挂载路径列表，逗号分隔(但当前组件只有第一个路径生效)。当为空时使用默认路径：全局参数global.persistence.basePath/角色名称"
+    recommendExpression: "/ranger"
+    valueType: InputString
+    configurableInWizard: true
+    tag: "资源管理"
+
+  - name: ranger.db.flavor
+    description: "Ranger存储使用的数据库类型"
+    valueType: InputString
+    recommendExpression: "MYSQL"
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: ranger.jpa.jdbc.driver
+    description: "JDBC driver for Ranger database"
+    valueType: InputString
+    recommendExpression: "net.sf.log4jdbc.DriverSpy"
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: ranger.db.host
+    description: "Host for Ranger database"
+    valueType: InputString
+    recommendExpression: "mysql.com"
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: ranger.jpa.jdbc.dbname
+    description: "Database for Ranger database"
+    valueType: InputString
+    recommendExpression: "ranger"
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: ranger.jpa.jdbc.user
+    description: "Database username"
+    recommendExpression: "root"
+    valueType: InputString
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: ranger.jpa.jdbc.password
+    description: "Database password"
+    valueType: InputString
+    recommendExpression: "95vQkU88E_tfdS"
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: ranger.external.url
+    description: "External URL for Ranger service"
+    valueType: InputString
+    recommendExpression: "http://localhost:6080"
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: ranger.admin.password
+    description: "Admin账号密码"
+    valueType: InputString
+    recommendExpression: "Ranger123"
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: ranger.service.http.port
+    description: "Ranger HTTP port"
+    valueType: InputNumber
+    recommendExpression: 6080
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: ranger.service.https.port
+    description: "Ranger HTTPS port"
+    valueType: InputNumber
+    recommendExpression: 6182
+    configurableInWizard: true
+    tag: "常用参数"
+
+  - name: audit.store
+    description: "审计存储数据库类型"
+    valueType: InputString
+    recommendExpression: ""
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: audit.solr.urls
+    description: "Solr数据库地址"
+    valueType: InputString
+    recommendExpression: ""
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: audit.solr.zookeepers
+    description: "Solr数据库zookeeper地址"
+    valueType: InputString
+    recommendExpression: ""
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: audit.solr.collection.name
+    description: "Collection Name for Solr"
+    valueType: InputString
+    recommendExpression: "ranger_audits"
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: audit.solr.config.name
+    description: "Config Name for Solr"
+    valueType: InputString
+    recommendExpression: "ranger_audits"
+    configurableInWizard: true
+    tag: "常用参数"
+  - name: audit.solr.acl.user.list.sasl
+    description: "Acl user list for solr"
+    valueType: InputString
+    recommendExpression: "solr,infra-solr"
+    configurableInWizard: true
+    tag: "常用参数"
+
+  - name: Ranger.admin.jvm.memory.percentage
+    description: "Ranger admin jvm堆内存占容器内存限额的百分比"
+    recommendExpression: 80
+    min: 10
+    max: 80
+    valueType: InputNumber
+    unit: ".0"
+    configurableInWizard: true
+    tag: "资源管理"
+  - name: ranger.admin.container.limit.cpu
+    description: "Ranger admin容器的CPU使用限额"
+    recommendExpression: 1.0
+    valueType: InputNumber
+    configurableInWizard: true
+    tag: "资源管理"
+  - name: ranger.admin.container.limit.memory
+    description: "Ranger admin容器的内存使用限额，单位MB"
+    recommendExpression: 2048
+    valueType: InputNumber
+    unit: Mi
+    configurableInWizard: true
+    tag: "资源管理"
+  - name: ranger.admin.container.request.cpu
+    description: "Ranger admin容器的CPU请求量"
+    recommendExpression: 0.2
+    valueType: InputNumber
+    configurableInWizard: true
+    tag: "资源管理"
+  - name: ranger.admin.container.request.memory
+    description: "Ranger admin容器的内存请求量，单位MB"
+    recommendExpression: 1024
+    valueType: InputNumber
+    unit: Mi
+    configurableInWizard: true
+    tag: "资源管理"
+
+
+#  - name: ds.alert.jvm.memory.percentage
+#    description: "Ranger Alert jvm堆内存占容器内存限额的百分比"
+#    recommendExpression: 80
+#    min: 10
+#    max: 80
+#    valueType: InputNumber
+#    unit: ".0"
+#    configurableInWizard: true
+#    tag: "资源管理"
+#  - name: ds.alert.container.limit.cpu
+#    description: "Ranger Alert容器的CPU使用限额"
+#    recommendExpression: 1.0
+#    valueType: InputNumber
+#    configurableInWizard: true
+#    tag: "资源管理"
+#  - name: ds.alert.container.limit.memory
+#    description: "Ranger Alert容器的内存使用限额，单位MB"
+#    recommendExpression: 1024
+#    valueType: InputNumber
+#    unit: Mi
+#    configurableInWizard: true
+#    tag: "资源管理"
+#  - name: ds.alert.container.request.cpu
+#    description: "Ranger Alert容器的CPU请求量"
+#    recommendExpression: 0.2
+#    valueType: InputNumber
+#    configurableInWizard: true
+#    tag: "资源管理"
+#  - name: ds.alert.container.request.memory
+#    description: "Ranger Alert容器的内存请求量，单位MB"
+#    recommendExpression: 256
+#    valueType: InputNumber
+#    unit: Mi
+#    configurableInWizard: true
+#    tag: "资源管理"
