@@ -9,20 +9,44 @@ metadata:
 spec:
 <#-- 这个route将匹配所有当前命名空间的告警，所以需要将默认receiver设置为null，并设置子路由-->
   route:
-    groupBy: ['alert']
+    <#--alertManager 按照命名空间和alertname分组-->
+    groupBy: ['namespace','alertname']
     groupWait: 30s
     groupInterval: 1m
     repeatInterval: 2m
-    receiver: 'web.hook'
+    receiver: 'null'
     continue: true
-    matchers:
-      - name: receiver
-        value: "webhook"
+<#--    matchers:-->
+<#--      - name: receiver-->
+<#--        value: "webhook"-->
+    routes:
+      - receiver: 'web.hook'
+        continue: true
+        matchers:
+          - name: receiver
+            value: "webhook"
+      - receiver: 'email'
+        continue: true
+        matchers:
+          - name: sendEmail
+            value: "true"
   receivers:
   - name: 'null'
   - name: 'web.hook'
     webhookConfigs:
     - url: '${cloudeonURL}/apiPre/alert/webhook'
+      sendResolved: true
+  - name: 'email'
+    emailConfigs:
+    - to: '{{ template "email.to" . }}'
+      html: '{{ template "email.content.html" .}}'
+      from: 'wangcen@gohigh.com.cn'
+      smarthost: 'smtp.exmail.qq.com:587'
+      authUsername: 'wangcen@gohigh.com.cn'
+      authPassword:
+        key: authPassword
+        name: smtp-credentials
+      requireTLS: true
       sendResolved: true
   inhibitRules:
     - sourceMatch:
