@@ -32,6 +32,8 @@ public interface ClusterNodeRepository extends JpaRepository<ClusterNodeEntity, 
 
     ClusterNodeEntity findByHostname(String hostname);
 
+    ClusterNodeEntity findByClusterIdAndHostname(Integer clusterId, String hostname);
+
     ClusterNodeEntity findByHostnameOrIp(String hostname, String ip);
 
     List<ClusterNodeEntity> findByClusterId(Integer clusterId);

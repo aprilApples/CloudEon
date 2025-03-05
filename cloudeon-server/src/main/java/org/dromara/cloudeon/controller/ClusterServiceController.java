@@ -719,7 +719,9 @@ public class ClusterServiceController {
         if (StringUtils.isBlank(dashboardUid)) {
             return ResultDTO.success("该组件未配置监控面板");
         }
-        Integer globalServiceInstanceId = serviceInstanceRepository.findByClusterIdAndStackServiceName(serviceInstanceEntity.getClusterId(), "GLOBAL");
+        // 集群ID
+        Integer clusterId = serviceInstanceEntity.getClusterId();
+        Integer globalServiceInstanceId = serviceInstanceRepository.findByClusterIdAndStackServiceName(clusterId, "GLOBAL");
         List<ServiceInstanceConfigEntity> globalConfigEntityList = serviceInstanceConfigRepository.findByServiceInstanceId(globalServiceInstanceId);
         Map<String, String> globalConfigMap = globalConfigEntityList.stream().collect(Collectors.toMap(ServiceInstanceConfigEntity::getName, ServiceInstanceConfigEntity::getValue));
 
@@ -732,9 +734,9 @@ public class ClusterServiceController {
                 break;
             case "INTERNAL_HELM_KUBE_PROMETHEUS":
                 String grafanaNodePort = serviceService
-                        .getConfigMaps(serviceInstanceEntity.getClusterId(), "KUBE_PROMETHEUS_STACK")
+                        .getConfigMaps(clusterId, "KUBE_PROMETHEUS_STACK")
                         .get("grafana.service.nodePort");
-                String grafanaHost = RandomUtil.randomEle(clusterNodeRepository.findAll()).getIp();
+                String grafanaHost = RandomUtil.randomEle(clusterNodeRepository.findByClusterId(clusterId)).getIp();
                 baseGrafanaUrl = StrUtil.format("http://{}:{}", grafanaHost, grafanaNodePort);
                 break;
             default:
