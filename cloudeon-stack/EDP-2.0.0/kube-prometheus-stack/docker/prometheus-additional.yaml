@@ -1,0 +1,77 @@
+# Prometheus 监控系统的，它定义了两个作业（job）来从 Kubernetes 集群中抓取指标
+# kubernetes-endpoints 从 Kubernetes 集群中的端点（endpoints）抓取指标
+- job_name: 'kubernetes-endpoints'
+  kubernetes_sd_configs:
+    - role: endpoints
+  relabel_configs:
+    # 只保留那些具有 prometheus.io/scrape: "true" 注解的服务端点
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+      action: keep
+      regex: true
+    # 如果服务有 prometheus.io/scheme 注解，则将其值替换到 __scheme__ 标签
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scheme]
+      action: replace
+      target_label: __scheme__
+      regex: (https?)
+    # 如果服务有 prometheus.io/path 注解，则将其值替换到 __metrics_path__ 标签
+    - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_path]
+      action: replace
+      target_label: __metrics_path__
+      regex: (.+)
+    # 使用服务的 IP 地址和 prometheus.io/port 注解中的端口来构建新的 __address__ 标签。
+    - source_labels: [__address__, __meta_kubernetes_service_annotation_prometheus_io_port]
+      action: replace
+      target_label: __address__
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+    # 将所有以 __meta_kubernetes_service_label_ 开头的标签映射到新的标签名称。
+    - action: labelmap
+      regex: __meta_kubernetes_service_label_(.+)
+    # 将服务所在的命名空间添加到 namespace 标签。
+    - source_labels: [__meta_kubernetes_namespace]
+      action: replace
+      target_label: namespace
+    # 将服务名称添加到 service 标签
+    - source_labels: [__meta_kubernetes_service_name]
+      action: replace
+      target_label: service
+    # 将 Pod 名称添加到 pod 标签
+    - source_labels: [__meta_kubernetes_pod_name]
+      action: replace
+      target_label: pod
+# 从 Kubernetes 集群中的 Pod 抓取指标
+- job_name: 'kubernetes-pods'
+  kubernetes_sd_configs:
+    - role: pod
+  relabel_configs:
+    # 只保留那些具有 prometheus.io/scrape: "true" 注解的 Pod
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+      action: keep
+      regex: true
+    # 将 Pod 的 prometheus.io/scheme 注解值应用到 scheme 标签
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scheme]
+      action: replace
+      target_label: __scheme__
+      regex: (https?)
+    # 将 Pod 的 prometheus.io/scheme 注解值应用到 scheme 标签
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+      action: replace
+      target_label: __metrics_path__
+      regex: (.+)
+    # 根据 Pod 的 IP 地址和 prometheus.io/port 注解值替换 address 标签
+    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+      action: replace
+      target_label: __address__
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+    # 将所有以 _meta_kubernetes_pod_label 开头的标签映射到新的标签名称
+    - action: labelmap
+      regex: __meta_kubernetes_pod_label_(.+)
+    # 将 Pod 的命名空间添加到 namespace 标签
+    - source_labels: [__meta_kubernetes_namespace]
+      action: replace
+      target_label: namespace
+    # 将 Pod 的名称添加到 pod 标签
+    - source_labels: [__meta_kubernetes_pod_name]
+      action: replace
+      target_label: pod
