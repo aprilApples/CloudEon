@@ -24,6 +24,7 @@ fi
 if [[ "${ROLE_FULL_NAME}" == "hadoop-hdfs-namenode" ]]; then
 
   echo "========================enable Ranger ========================"
+  \cp -f /opt/service-render-output/ranger-handle.sh $RANGER_HOME/ranger-hdfs-plugin/
   bash $RANGER_HOME/ranger-hdfs-plugin/ranger-handle.sh
 
   source /opt/service-render-output/namenode-format.sh

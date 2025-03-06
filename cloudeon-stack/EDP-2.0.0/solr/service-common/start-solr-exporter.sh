@@ -45,7 +45,7 @@ check_solr_readiness() {
 
 # Execute the script to check if Solr has started successfully
 if check_solr_readiness; then
-  . $SOLR_HOME/solr_server_env.sh
+  source $SOLR_HOME/solr_server_env.sh
   echo $ZOOKEEPER_CLUSTER_HOST
   nohup $SOLR_HOME/contrib/prometheus-exporter/bin/solr-exporter -p ${METRICS_PORT} -z ${ZOOKEEPER_CLUSTER_HOST} -f $SOLR_HOME/contrib/prometheus-exporter/conf/solr-exporter-config.xml -n 16 > /workspace/logs/solr-exporter.log 2>&1 &
 #  nohup $SOLR_HOME/contrib/prometheus-exporter/bin/solr-exporter -p 9854 -b http://localhost:8983/solr -f $SOLR_HOME/contrib/prometheus-exporter/conf/solr-exporter-config.xml -n 8 > /workspace/logs/solr-exporter.log 2>&1 &

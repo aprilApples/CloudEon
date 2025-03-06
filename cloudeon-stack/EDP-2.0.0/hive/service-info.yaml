@@ -276,10 +276,10 @@ configurations:
     tag: "常用参数"
 
   - name: "ranger.enable"
+    description: "是否开启Ranger策略服务"
     recommendExpression: "true"
     valueType: Switch
     configurableInWizard: true
-    description: "是否开启Ranger策略服务"
     tag: "安全"
   - name: "ranger.policy.mgr.url"
     recommendExpression: "http://10.188.15.204:6080"
@@ -300,7 +300,7 @@ configurations:
     description: "Hive组件安装地址"
     tag: "安全"
   - name: "ranger.xasecure.audit.jdbc.url"
-    recommendExpression: "jdbc:mysql://mysql.com:3306/ambori_ranger"
+    recommendExpression: "jdbc:mysql://10.188.15.59:3306/ambori_ranger"
     valueType: InputString
     configurableInWizard: true
     description: "Ranger服务数据库地址"
@@ -314,12 +314,44 @@ configurations:
     confFile: "xasecure-audit.xml"
     tag: "安全"
   - name: "ranger.xasecure.audit.jdbc.password"
-    recommendExpression: ""
+    recommendExpression: "95vQkU88E_tfdS"
     valueType: InputString
     configurableInWizard: true
     description: "Ranger服务数据库密码"
     confFile: "xasecure-audit.xml"
     tag: "安全"
+
+  - name: "ranger.xaaudit.solr.enable"
+    recommendExpression: "true"
+    valueType: Switch
+    configurableInWizard: true
+    description: "是否开启Ranger审计功能"
+    tag: "安全"
+  - name: "ranger.xaaudit.solr.url"
+    recommendExpression: "http://10.188.15.206:8983/solr/ranger_audits"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger审计信息存储的Solr数据库地址"
+    tag: "安全"
+  - name: "ranger.xaaudit.solr.user"
+    recommendExpression: "NONE"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger审计信息存储的Solr数据库登录用户名"
+    tag: "安全"
+  - name: "ranger.xaaudit.solr.password"
+    recommendExpression: "NONE"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger审计信息存储的Solr数据库登录密码"
+    tag: "安全"
+  - name: "ranger.xaaudit.solr.zookeeper"
+    recommendExpression: "k8s-node1:2181,k8s-node2:2181,k8s-node3:2181"
+    valueType: InputString
+    configurableInWizard: true
+    description: "Ranger审计信息存储的Solr数据库Zookeeper地址"
+    tag: "安全"
+
 #  - name: "hive.security.authenticator.manager"
 #    recommendExpression: "org.apache.hadoop.hive.ql.security.SessionStateUserAuthenticator"
 #    valueType: InputString

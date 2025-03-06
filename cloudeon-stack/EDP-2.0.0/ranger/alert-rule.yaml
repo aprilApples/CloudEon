@@ -6,7 +6,7 @@ rules:
       alertAdvice: RANGER_ADMIN发生宕机，请检查日志或执行重启
       alertInfo: "RANGER_ADMIN发生宕机，当前存活实例数为：{{$value}}"
     - alert: RANGER_ADMIN进程存活
-      promql: up{job="metrics-ranger-master"} != 1
+      promql: up{job="metrics-ranger-admin"} != 1
       alertLevel: exception
       serviceRoleName: RANGER_ADMIN
       alertAdvice: DS_MASTER宕机，请重新启动

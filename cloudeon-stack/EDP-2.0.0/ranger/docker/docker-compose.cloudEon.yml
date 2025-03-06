@@ -3,13 +3,14 @@ services:
   ranger:
     build:
       context: .
-      dockerfile: Dockerfile.ranger
+      dockerfile: Dockerfile
       args:
         - RANGER_VERSION=${RANGER_VERSION}
         - RANGER_DB_TYPE=${RANGER_DB_TYPE}
         - RANGER_ADMIN_JAVA_VERSION=${RANGER_ADMIN_JAVA_VERSION}
-    image: ranger:2.5.0
-    container_name: ranger
+        - USERSYNC_VERSION=${USERSYNC_VERSION}
+    image: gohigh/cloudeon/ranger-admin-usersync:2.5.0
+    container_name: ranger-cloudeon
     hostname: ranger.example.com
     stdin_open: true
     tty: true
@@ -27,6 +28,8 @@ services:
     environment:
       - RANGER_VERSION
       - RANGER_DB_TYPE
+      - USERSYNC_VERSION
+      - ENABLE_FILE_SYNC_SOURCE
       - DEBUG_ADMIN=${DEBUG_ADMIN:-false}
     command:
       - /home/ranger/scripts/ranger.sh

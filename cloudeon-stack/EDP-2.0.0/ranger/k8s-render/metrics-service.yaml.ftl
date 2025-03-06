@@ -25,4 +25,4 @@ spec:
     roleFullName: ranger-admin
   ports:
   - name: metrics
-    port: ${conf['ranger.service.http.port']}
+    port: 9505

@@ -23,7 +23,7 @@ customConfigFiles: []
 configurations:
   - name: serverImage
     description: "服务镜像"
-    recommendExpression: "gohigh/ranger:2.5.0"
+    recommendExpression: "gohigh/ranger-admin-usersync:2.5.0"
     valueType: InputString
     configurableInWizard: true
     tag: "镜像"
@@ -49,13 +49,13 @@ configurations:
   - name: ranger.db.host
     description: "Host for Ranger database"
     valueType: InputString
-    recommendExpression: "mysql.com"
+    recommendExpression: "10.188.15.59"
     configurableInWizard: true
     tag: "常用参数"
   - name: ranger.jpa.jdbc.dbname
     description: "Database for Ranger database"
     valueType: InputString
-    recommendExpression: "ranger"
+    recommendExpression: "ambori_ranger"
     configurableInWizard: true
     tag: "常用参数"
   - name: ranger.jpa.jdbc.user
@@ -87,11 +87,30 @@ configurations:
     valueType: InputNumber
     recommendExpression: 6080
     configurableInWizard: true
-    tag: "常用参数"
+    tag: "端口"
   - name: ranger.service.https.port
     description: "Ranger HTTPS port"
     valueType: InputNumber
     recommendExpression: 6182
+    configurableInWizard: true
+    tag: "端口"
+#  - name: ranger.metrics.remote.port
+#    description: "JMX远程连接端口"
+#    valueType: InputNumber
+#    recommendExpression: 9605
+#    configurableInWizard: true
+#    tag: "端口"
+#  - name: ranger.metrics.expose.port
+#    description: "JMX指标暴露端口"
+#    valueType: InputNumber
+#    recommendExpression: 9505
+#    configurableInWizard: true
+#    tag: "端口"
+
+  - name: usersync.enable
+    description: "是否开启用户同步"
+    valueType: Switch
+    recommendExpression: "true"
     configurableInWizard: true
     tag: "常用参数"
 

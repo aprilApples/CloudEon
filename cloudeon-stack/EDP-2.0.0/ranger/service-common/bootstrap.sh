@@ -10,8 +10,15 @@ rm -f $RANGER_HOME/admin/install.properties
 rm -f $RANGER_HOME/admin/setup.sh
 \cp -f /opt/service-render-output/install.properties $RANGER_HOME/admin/install.properties
 \cp -f /opt/service-render-output/setup.sh $RANGER_HOME/admin/setup.sh
+\cp -f /opt/service-render-output/ranger-admin-services.sh $RANGER_HOME/admin/ews/ranger-admin-services.sh
+\cp -f /opt/service-render-output/jmx_prometheus.yaml $RANGER_HOME/admin/jmx_prometheus.yaml
 source $RANGER_HOME/admin/setup.sh
 $RANGER_HOME/admin/ews/ranger-admin-services.sh start
+
+
+\cp -f /opt/service-render-output/ranger-usersync.sh $RANGER_HOME/usersync/ranger-usersync.sh
+\cp -f /opt/service-render-output/ranger-usersync-install.properties $RANGER_HOME/usersync/install.properties
+source $RANGER_HOME/usersync/ranger-usersync.sh
 
 
 until find /workspace/logs -mmin -1 -type f -name '*.log' ! -name '*gc*' | grep -q .

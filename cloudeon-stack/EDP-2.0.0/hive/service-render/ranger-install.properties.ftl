@@ -46,11 +46,11 @@ COMPONENT_INSTALL_DIR_NAME=${conf['component.install.dir.name']}
 #XAAUDIT.SOLR.ZOOKEEPER=
 #XAAUDIT.SOLR.FILE_SPOOL_DIR=/var/log/hive/audit/solr/spool
 
-XAAUDIT.SOLR.ENABLE=false
-XAAUDIT.SOLR.URL=NONE
-XAAUDIT.SOLR.USER=NONE
-XAAUDIT.SOLR.PASSWORD=NONE
-XAAUDIT.SOLR.ZOOKEEPER=NONE
+XAAUDIT.SOLR.ENABLE=${conf['ranger.xaaudit.solr.enable']}
+XAAUDIT.SOLR.URL=${conf['ranger.xaaudit.solr.url']}
+XAAUDIT.SOLR.USER=${conf['ranger.xaaudit.solr.user']}
+XAAUDIT.SOLR.PASSWORD=${conf['ranger.xaaudit.solr.password']}
+XAAUDIT.SOLR.ZOOKEEPER=${conf['ranger.xaaudit.solr.zookeeper']}
 XAAUDIT.SOLR.FILE_SPOOL_DIR=/var/log/hive/audit/solr/spool
 
 # Enable audit logs to ElasticSearch
