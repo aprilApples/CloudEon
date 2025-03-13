@@ -15,8 +15,8 @@
 # limitations under the License.
 
 #This script downloads Solr (optional) and sets up Solr for Ranger Audit Server
-curr_dir=`pwd`
-PROPFILE=$PWD/install.properties
+curr_dir=/opt/ranger/solr_for_audit_setup
+PROPFILE=$curr_dir/install.properties
 
 if [ ! -f ${PROPFILE} ]
 then
@@ -26,7 +26,7 @@ fi
 
 get_prop(){
 	validateProperty=$(sed '/^\#/d' $2 | grep "^$1\s*="  | tail -n 1) # for validation
-	if  test -z "$validateProperty" ; then log "[E] '$1' not found in $2 file while getting....!!"; exit 1; fi
+	if  test -z "$validateProperty" ; then echo "[E] '$1' not found in $2 file while getting....!!"; exit 1; fi
 	value=$(echo $validateProperty | cut -d "=" -f2-)
 	echo $value
 }
@@ -65,10 +65,10 @@ check_java_version() {
 
     export JAVA_BIN=${JAVA_HOME}/bin/java
 
-    if [ ! -x ${JAVA_BIN} ]; then
-        echo "Error: '${JAVA_BIN}' command not found"
-        exit 1;
-    fi
+#    if [ ! -x ${JAVA_BIN} ]; then
+#        echo "Error: '${JAVA_BIN}' command not found"
+#        exit 1;
+#    fi
 
     version=$("$JAVA_BIN" -version 2>&1 | awk -F '"' '/version/ {print $2}')
     major=`echo ${version} | cut -d. -f1`

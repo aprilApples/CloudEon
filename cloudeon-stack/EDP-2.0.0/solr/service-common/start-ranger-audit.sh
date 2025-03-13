@@ -1,12 +1,30 @@
 #!/bin/bash
 
-RANGER_HOME=/opt/ranger
+RENDER_DIR=/opt/service-render-output
+AUDIT_SETUP_DIR=/opt/ranger/solr_for_audit_setup
 
-mkdir -p /opt/ranger
-cp -rf /opt/service-render-output/solr_for_audit_setup $RANGER_HOME/
+mkdir -p $AUDIT_SETUP_DIR/conf
+mkdir -p $AUDIT_SETUP_DIR/resources
+mkdir -p $AUDIT_SETUP_DIR/solr_cloud/scripts
+
+cp -f $RENDER_DIR/ranger_audit_solrconfig.xml.j2 $AUDIT_SETUP_DIR/conf/solrconfig.xml.j2
+cp -f $RENDER_DIR/managed-schema $AUDIT_SETUP_DIR/conf/managed-schema
+cp -f $RENDER_DIR/ranger_audit_solrconfig.xml $AUDIT_SETUP_DIR/conf/solrconfig.xml
+cp -f $RENDER_DIR/log4j.properties.j2 $AUDIT_SETUP_DIR/resources/log4j.properties.j2
+cp -f $RENDER_DIR/add_ranger_audits_conf_to_zk.sh.j2 $AUDIT_SETUP_DIR/solr_cloud/scripts
+cp -f $RENDER_DIR/create_ranger_audits_collection.sh.j2 $AUDIT_SETUP_DIR/solr_cloud/scripts
+cp -f $RENDER_DIR/ranger_audit_solr.in.sh.j2 $AUDIT_SETUP_DIR/solr_cloud/scripts/solr.in.sh.j2
+cp -f $RENDER_DIR/ranger_audit_solr.sh.j2 $AUDIT_SETUP_DIR/solr_cloud/scripts/solr.sh.j2
+cp -f $RENDER_DIR/ranger_audit_start_solr.sh.j2 $AUDIT_SETUP_DIR/solr_cloud/scripts/start_solr.sh.j2
+cp -f $RENDER_DIR/ranger_audit_stop_solr.sh.j2 $AUDIT_SETUP_DIR/solr_cloud/scripts/stop_solr.sh.j2
+cp -f $RENDER_DIR/ranger_audit_solr.xml.j2 $AUDIT_SETUP_DIR/solr_cloud/solr.xml.j2
+cp -f $RENDER_DIR/install.properties $AUDIT_SETUP_DIR/install.properties
+cp -f $RENDER_DIR/ranger_audit_setup.sh $AUDIT_SETUP_DIR/setup.sh
+
+chmod -R 775 $AUDIT_SETUP_DIR
 
 # 执行第一个脚本
-$RANGER_HOME/solr_for_audit_setup/setup.sh
+$AUDIT_SETUP_DIR/setup.sh
 setup_status=$?
 
 # 检查第一个脚本是否执行成功
@@ -37,7 +55,7 @@ if [ $setup_status -eq 0 ]; then
     exit $add_conf_status
   fi
 else
-  echo "setup.sh failed with status $setup_status."
+  echo "ranger_audit_setup.sh failed with status $setup_status."
   exit $setup_status
 fi
 

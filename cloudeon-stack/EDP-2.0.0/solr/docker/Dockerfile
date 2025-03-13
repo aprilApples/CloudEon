@@ -1,4 +1,4 @@
-/       FROM registry.cn-guangzhou.aliyuncs.com/bigdata200/hadoop:3.3.4
+FROM registry.cn-guangzhou.aliyuncs.com/bigdata200/hadoop:3.3.4
 
 WORKDIR /tmp
 

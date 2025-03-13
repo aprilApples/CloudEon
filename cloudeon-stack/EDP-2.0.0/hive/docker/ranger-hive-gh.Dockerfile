@@ -118,7 +118,7 @@ RUN tar xvfz /home/ranger/dist/ranger-${HIVE_PLUGIN_VERSION}-hive-plugin.tar.gz 
     ln -s /opt/ranger/ranger-${HIVE_PLUGIN_VERSION}-hive-plugin /opt/ranger/ranger-hive-plugin && \
     rm -f /home/ranger/dist/ranger-${HIVE_PLUGIN_VERSION}-hive-plugin.tar.gz && \
     cp -f /home/ranger/scripts/ranger-hive-plugin-install.properties /opt/ranger/ranger-hive-plugin/install.properties && \
-    chmod 744 ${RANGER_SCRIPTS}/ranger-hive-setup.sh ${RANGER_SCRIPTS}/ranger-hive.sh
+    chmod 744 ${RANGER_SCRIPTS}/ranger-hive-ranger_audit_setup.sh ${RANGER_SCRIPTS}/ranger-hive.sh
 
 WORKDIR $HIVE_HOME
 

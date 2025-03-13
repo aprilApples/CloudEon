@@ -105,7 +105,7 @@ RUN ln -s /opt/hadoop-${HADOOP_VERSION} /opt/hadoop && \
     ln -s /opt/ranger/ranger-${YARN_PLUGIN_VERSION}-yarn-plugin /opt/ranger/ranger-yarn-plugin && \
     rm -f /home/ranger/dist/ranger-${YARN_PLUGIN_VERSION}-yarn-plugin.tar.gz && \
     cp -f /home/ranger/scripts/ranger-yarn-plugin-install.properties /opt/ranger/ranger-yarn-plugin/install.properties && \
-    chmod 744 ${RANGER_SCRIPTS}/ranger-hadoop-setup.sh ${RANGER_SCRIPTS}/ranger-hadoop.sh ${RANGER_SCRIPTS}/ranger-hadoop-mkdir.sh && \
+    chmod 744 ${RANGER_SCRIPTS}/ranger-hadoop-ranger_audit_setup.sh ${RANGER_SCRIPTS}/ranger-hadoop.sh ${RANGER_SCRIPTS}/ranger-hadoop-mkdir.sh && \
     chown hdfs:hadoop ${RANGER_SCRIPTS}/ranger-hadoop-mkdir.sh
 
 ENV HADOOP_HDFS_HOME   /opt/hadoop

@@ -351,6 +351,7 @@ public class ClusterServiceController {
             serviceInstanceConfigEntities.addAll(configNotInWizardInstanceConfigEntities);
         }
 
+        //TODO 删除没效果
         List<ServiceInstanceConfigEntity> customInstanceConfigEntityStream = customConfList.stream().map(new Function<ServiceCustomConf, ServiceInstanceConfigEntity>() {
             @Override
             public ServiceInstanceConfigEntity apply(ServiceCustomConf initServiceCustomConf) {
@@ -680,17 +681,17 @@ public class ClusterServiceController {
         ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findById(serviceInstanceId).get();
         // 查出有依赖此服务的服务实例
         List<ServiceInstanceEntity> dep = serviceInstanceRepository.findByClusterIdAndDependenceServiceInstanceIdsNotNull(serviceInstanceEntity.getClusterId());
-        List<ServiceInstanceEntity> depServiceInstanceList = dep.stream().filter(new Predicate<ServiceInstanceEntity>() {
-            @Override
-            public boolean test(ServiceInstanceEntity serviceInstanceEntity) {
-                List<String> ids = Arrays.stream(serviceInstanceEntity.getDependenceServiceInstanceIds().split(",")).collect(Collectors.toList());
-                return ids.contains(serviceInstanceId.toString());
-            }
-        }).collect(Collectors.toList());
-        if (depServiceInstanceList.size() > 0) {
-            String depServiceNames = depServiceInstanceList.stream().map(ServiceInstanceEntity::getServiceName).collect(Collectors.joining(","));
-            return ResultDTO.failed("请先删除依赖此服务的服务实例：" + depServiceNames);
-        }
+//        List<ServiceInstanceEntity> depServiceInstanceList = dep.stream().filter(new Predicate<ServiceInstanceEntity>() {
+//            @Override
+//            public boolean test(ServiceInstanceEntity serviceInstanceEntity) {
+//                List<String> ids = Arrays.stream(serviceInstanceEntity.getDependenceServiceInstanceIds().split(",")).collect(Collectors.toList());
+//                return ids.contains(serviceInstanceId.toString());
+//            }
+//        }).collect(Collectors.toList());
+//        if (depServiceInstanceList.size() > 0) {
+//            String depServiceNames = depServiceInstanceList.stream().map(ServiceInstanceEntity::getServiceName).collect(Collectors.joining(","));
+//            return ResultDTO.failed("请先删除依赖此服务的服务实例：" + depServiceNames);
+//        }
 
         //  生成删除服务command
         List<ServiceInstanceEntity> serviceInstanceEntities = Lists.newArrayList(serviceInstanceEntity);

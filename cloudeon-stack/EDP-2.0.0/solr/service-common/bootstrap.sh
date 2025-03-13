@@ -16,6 +16,8 @@ $SOLR_HOME/bin/solr start -force
 
 source /opt/service-common/start-solr-exporter.sh
 
+
+# Ranger Audit
 setup_status=$?
 # 检查第一个脚本是否执行成功
 if [ $setup_status -eq 0 ]; then

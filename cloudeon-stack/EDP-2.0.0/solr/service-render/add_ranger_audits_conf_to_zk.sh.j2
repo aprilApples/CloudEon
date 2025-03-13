@@ -16,16 +16,13 @@
 
 #This scripts add the ranger_audit configuration with schema to zookeeper
 
-function usage {
-    echo "Error: The following properties need to be set in the script SOLR_ZK, SOLR_INSTALL_DIR and SOLR_RANGER_HOME"
-    exit 1
-}
 
-JAVA_HOME={{JAVA_HOME}}
-SOLR_USER={{SOLR_USER}}
-SOLR_ZK={{SOLR_ZK}}
-SOLR_INSTALL_DIR={{SOLR_INSTALL_DIR}}
-SOLR_RANGER_HOME={{SOLR_RANGER_HOME}}
+
+JAVA_HOME=$JAVA_HOME
+SOLR_USER=$SOLR_USER
+SOLR_ZK=$SOLR_ZK
+SOLR_INSTALL_DIR=$SOLR_INSTALL_DIR
+SOLR_RANGER_HOME=$SOLR_RANGER_HOME
 
 if [ "`whoami`" != "$SOLR_USER" ]; then
     if [ -w /etc/passwd ]; then
@@ -39,15 +36,15 @@ if [ "`whoami`" != "$SOLR_USER" ]; then
 fi
 
 if [ "$SOLR_ZK" = "" ]; then
-    usage
+    echo "Error: The following properties need to be set in the script : SOLR_ZK"
 fi
 
 if [ "$SOLR_INSTALL_DIR" = "" ]; then
-    usage
+    echo "Error: The following properties need to be set in the script : SOLR_INSTALL_DIR"
 fi
 
 if [ "$SOLR_RANGER_HOME" = "" ]; then
-    usage
+    echo "Error: The following properties need to be set in the script : SOLR_RANGER_HOME"
 fi
 
 SOLR_RANGER_CONFIG_NAME=ranger_audits

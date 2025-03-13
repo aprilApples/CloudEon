@@ -36,12 +36,12 @@
 
   <!-- <lib/> directives can be used to instruct Solr to load any Jars
        identified and use them to resolve any "plugins" specified in
-       your solrconfig.xml or schema.xml (ie: Analyzers, Request
+       your ranger_audit_solrconfig.xml or schema.xml (ie: Analyzers, Request
        Handlers, etc...).
        All directories and paths are resolved relative to the
        instanceDir.
        Please note that <lib/> directives are processed in the order
-       that they appear in your solrconfig.xml file, and are "stacked"
+       that they appear in your ranger_audit_solrconfig.xml file, and are "stacked"
        on top of each other when building a ClassLoader - so if you have
        plugin jars with dependencies on other jars, the "lower level"
        dependency jars should be loaded first.
@@ -543,7 +543,7 @@
       <arr name="queries">
         <!--
         <lst>
-          <str name="q">static firstSearcher warming in solrconfig.xml</str>
+          <str name="q">static firstSearcher warming in ranger_audit_solrconfig.xml</str>
         </lst>
         -->
       </arr>
