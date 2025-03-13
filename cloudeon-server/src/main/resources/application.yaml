@@ -33,7 +33,8 @@ spring:
       max-file-size: 209715200
       max-request-size: 209715200
 cloudeon:
-  home.path: ${CLOUDEON_HOME:D:/project2025/code/CloudEon}
+#  home.path: ${CLOUDEON_HOME:D:/project2025/code/CloudEon}
+  home.path: ${CLOUDEON_HOME:D:/AllProject/CenCloudEon}
   stack.load.path: ${cloudeon.home.path}/cloudeon-stack
   task.log: ${java.io.tmpdir}/log
   work.home: ${java.io.tmpdir}/work
