@@ -25,29 +25,33 @@ spec:
         matchers:
           - name: receiver
             value: "webhook"
+<#if conf['alertManagerConfig.sendEmail']?? && conf['alertManagerConfig.sendEmail'] == "true">
       - receiver: 'email'
         continue: true
         matchers:
           - name: sendEmail
             value: "true"
+</#if>
   receivers:
   - name: 'null'
   - name: 'web.hook'
     webhookConfigs:
     - url: '${cloudeonURL}/apiPre/alert/webhook'
       sendResolved: true
+<#if conf['alertManagerConfig.sendEmail']?? && conf['alertManagerConfig.sendEmail'] == "true">
   - name: 'email'
     emailConfigs:
     - to: '{{ template "email.to" . }}'
       html: '{{ template "email.content.html" .}}'
-      from: 'wangcen@gohigh.com.cn'
-      smarthost: 'smtp.exmail.qq.com:587'
-      authUsername: 'wangcen@gohigh.com.cn'
+      from: "${conf['alertManagerConfig.from']}"
+      smarthost: "${conf['alertManagerConfig.smarthost']}"
+      authUsername: "${conf['alertManagerConfig.authUsername']}"
       authPassword:
         key: authPassword
         name: smtp-credentials
-      requireTLS: true
+      requireTLS: ${conf['alertManagerConfig.requireTLS']}
       sendResolved: true
+</#if>
   inhibitRules:
     - sourceMatch:
         - name: alertLevel
@@ -56,4 +60,14 @@ spec:
         - name: alertLevel
           value: "告警级别"
       equal: ['alert', 'dev', 'instance']
-
+<#if conf['alertManagerConfig.sendEmail']?? && conf['alertManagerConfig.sendEmail'] == "true">
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: smtp-credentials
+  namespace: ${namespace}
+type: Opaque
+data:
+  authPassword: "${conf['alertManagerConfig.authPassword']}"
+</#if>

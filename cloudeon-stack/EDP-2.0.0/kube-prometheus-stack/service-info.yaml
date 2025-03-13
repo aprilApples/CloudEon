@@ -131,3 +131,46 @@ configurations:
     valueType: InputString
     configurableInWizard: true
     tag: "镜像"
+
+  - name: alertManagerConfig.sendEmail
+    recommendExpression: "false"
+    description: "该参数用于是否开启alertManager邮件告警"
+    valueType: Switch
+    configurableInWizard: true
+    tag: "邮件告警"
+
+  - name: alertManagerConfig.smarthost
+    recommendExpression: "smtp.exmail.qq.com:587"
+    description: "邮箱SMTP服务器地址"
+    valueType: InputString
+    configurableInWizard: true
+    tag: "邮件告警"
+
+  - name: alertManagerConfig.from
+    recommendExpression: "wangcen@gohigh.com.cn"
+    description: "邮箱的发件人账号"
+    valueType: InputString
+    configurableInWizard: true
+    tag: "邮件告警"
+
+  - name: alertManagerConfig.authUsername
+    recommendExpression: "wangcen@gohigh.com.cn"
+    description: "邮箱发件人管理员的账号地址"
+    valueType: InputString
+    configurableInWizard: true
+    tag: "邮件告警"
+
+  - name: alertManagerConfig.authPassword
+    recommendExpression: "WkZIZm1mS2h4MlFQWTVhYQ=="
+    description: "邮箱发件人管理员的密码"
+    valueType: InputString
+    configurableInWizard: true
+    tag: "邮件告警"
+
+  - name: alertManagerConfig.requireTLS
+    recommendExpression: "true"
+    description: "该参数用于是否启用SSL连接"
+    valueType: Switch
+    configurableInWizard: true
+    tag: "邮件告警"
+

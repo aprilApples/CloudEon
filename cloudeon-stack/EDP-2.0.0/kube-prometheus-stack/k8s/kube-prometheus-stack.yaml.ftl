@@ -51,6 +51,7 @@ spec:
         security:
           allow_embedding: true
     alertmanager:
+<#if conf['alertManagerConfig.sendEmail']?? && conf['alertManagerConfig.sendEmail'] == "true">
       templateFiles:
         email.tmpl: |-
           {{ define "email.to" }}{{ (index .Alerts 0).Labels.email }}{{ end }}
@@ -92,6 +93,7 @@ spec:
           </body>
           </html>
           {{ end }}
+</#if>
       extraVolumes:
         - name: email-templates
           configMap:
@@ -116,6 +118,7 @@ spec:
       image:
         registry: ${conf['image.registry.proxy.k8s']}
         pullPolicy: IfNotPresent
+<#if conf['alertManagerConfig.sendEmail']?? && conf['alertManagerConfig.sendEmail'] == "true">
     additionalConfigMaps:
       - name: alertmanager-email-templates
         namespace: ${conf['kube-prometheus.namespace']}
@@ -160,3 +163,4 @@ spec:
             </body>
             </html>
             {{ end }}
+</#if>
