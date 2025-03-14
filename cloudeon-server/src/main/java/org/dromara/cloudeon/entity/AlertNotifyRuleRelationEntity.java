@@ -1,6 +1,7 @@
 package org.dromara.cloudeon.entity;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;
@@ -8,6 +9,7 @@ import java.io.Serializable;
 
 @Data
 @Entity
+@Accessors(chain = true)
 @Table(name = "gh_alert_notify_rule_relation")
 public class AlertNotifyRuleRelationEntity implements Serializable {
 

@@ -11,5 +11,7 @@ public class AlertRuleDropDownBoxVO implements Serializable {
 
     private Integer id;
 
+    private String stackServiceName;
+
     private String ruleName;
 }

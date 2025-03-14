@@ -46,7 +46,7 @@ public class AlertNotifyUpdateReq implements Serializable {
     /**
      * 告警规则 多个用逗号分隔
      */
-    private List<String> alertRules;
+    private List<Integer> alertRules;
 
     /**
      * 描述

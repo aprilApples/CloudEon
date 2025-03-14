@@ -30,12 +30,6 @@ public class AlertNotifyAddReq implements Serializable {
      */
     private Integer enableStatus;
 
-
-    /**
-     * 框架服务类型 多个用逗号分隔
-     */
-    private List<String> services;
-
     /**
      * 接收者 多个用逗号分隔
      */
@@ -44,7 +38,7 @@ public class AlertNotifyAddReq implements Serializable {
     /**
      * 告警规则 多个用逗号分隔
      */
-    private List<String> alertRules;
+    private List<Integer> alertRules;
 
     /**
      * 描述

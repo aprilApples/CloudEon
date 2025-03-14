@@ -38,6 +38,13 @@ public class ResultDTO<T> implements Serializable {
     private T data;
     private String message;
 
+    public static <T> ResultDTO<T> success() {
+        ResultDTO<T> r = new ResultDTO<>();
+        r.success = true;
+        r.data = null;
+        return r;
+    }
+
     public static <T> ResultDTO<T> success(T data) {
         ResultDTO<T> r = new ResultDTO<>();
         r.success = true;
