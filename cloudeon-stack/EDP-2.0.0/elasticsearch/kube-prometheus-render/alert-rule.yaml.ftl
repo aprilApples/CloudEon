@@ -22,6 +22,10 @@ spec:
          expr: <@executeDynamicCode rule.promql />
          labels:
              receiver: "webhook"
+          <#if rule.enableStatus ?? && rule.enableStatus>
+             sendEmail: "true"
+             email: "${rule.recipients}"
+          </#if>
              alertLevel: "${rule.alertLevel}"
              clusterId: "${rule.clusterId}"
              serviceRoleName: "${rule.stackRoleName}"

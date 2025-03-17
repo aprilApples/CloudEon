@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.cloudeon.config.CloudeonConfigProp;
 import org.dromara.cloudeon.dao.*;
-import org.dromara.cloudeon.domain.dto.ClusterAlertRuleAndNotifyInfo;
+import org.dromara.cloudeon.domain.dto.ClusterAlertRuleAndNotifyDTO;
 import org.dromara.cloudeon.dto.NodeInfo;
 import org.dromara.cloudeon.dto.RoleNodeInfo;
 import org.dromara.cloudeon.entity.*;
@@ -149,7 +149,7 @@ public class ServiceService {
         // List<ClusterAlertRuleEntity> clusterAlertRuleEntities = clusterAlertRuleRepository.findByClusterIdAndStackServiceName(clusterId, stackServiceEntity.getName());
         // 增加告警规则通知的配置
         List<Map<String, String>> clusterAlertRuleAndNotifyInfoMapList = clusterAlertRuleRepository.findClusterAlertRuleAndNotifyInfo(clusterId, stackServiceEntity.getName());
-        List<ClusterAlertRuleAndNotifyInfo> clusterAlertRuleAndNotifyInfos = JSON.parseArray(JSON.toJSONString(clusterAlertRuleAndNotifyInfoMapList), ClusterAlertRuleAndNotifyInfo.class);
+        List<ClusterAlertRuleAndNotifyDTO> clusterAlertRuleAndNotifyInfos = JSON.parseArray(JSON.toJSONString(clusterAlertRuleAndNotifyInfoMapList), ClusterAlertRuleAndNotifyDTO.class);
         dataModel.put("alertRules", clusterAlertRuleAndNotifyInfos);
         // 获取该服务支持的自定义配置文件名
         String customConfigFiles = stackServiceEntity.getCustomConfigFiles();
