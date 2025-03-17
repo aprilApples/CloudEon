@@ -15,12 +15,14 @@ import java.util.List;
  */
 public interface AlertNotifyRuleRelationRepository extends JpaRepository<AlertNotifyRuleRelationEntity, Integer> {
 
-    @Query(value = "SELECT DISTINCT(alert_notify_id) AS notifyId FROM gh_alert_notify_rule_relation WHERE IF(:alertNotifyId IS NOT NULL, alert_notify_id!=:alertNotifyId, 1=1) " +
-            "AND IF(:alertRuleIds IS NOT NULL ,alert_rule_id IN :alertRuleIds,1=1)", nativeQuery = true)
+    @Query(value = "SELECT DISTINCT(alert_notify_id) AS notifyId FROM gh_alert_notify_rule_relation WHERE IF(:alertNotifyId IS NOT NULL, alert_notify_id!=:alertNotifyId, 1=1) AND alert_rule_id IN :alertRuleIds", nativeQuery = true)
     List<Integer> checkAlertRuleIdExist(@Param("alertNotifyId") Integer alertNotifyId, @Param("alertRuleIds") List<Integer> alertRuleIds);
 
-    Boolean deleteByAlertNotifyIdIn(List<Integer> alertNotifyIds);
+    Integer deleteByAlertNotifyIdIn(List<Integer> alertNotifyIds);
 
     List<AlertNotifyRuleRelationEntity> findByAlertNotifyIdIn(List<Integer> alertNotifyIds);
+
+    @Query(value = "SELECT alert_rule_id AS notifyId FROM gh_alert_notify_rule_relation relation left join gh_alert_notify_info notify on notify.id = relation.alert_notify_id WHERE notify.cluster_id=?1", nativeQuery = true)
+    List<Integer> findAlertRuleIdsByClusterId(Integer clusterId);
 
 }

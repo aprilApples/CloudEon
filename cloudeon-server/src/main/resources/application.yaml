@@ -46,7 +46,7 @@ spring:
       on-profile: mysql
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:mysql.gh.com}:${MYSQL_PORT:3306}/${MYSQL_DB_NAME:cloudeon}?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://${MYSQL_HOST:10.188.15.59}:${MYSQL_PORT:3306}/${MYSQL_DB_NAME:cloudeon}?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     username: ${MYSQL_USER:root}
     password: ${MYSQL_PASSWORD:95vQkU88E_tfdS}
 ---

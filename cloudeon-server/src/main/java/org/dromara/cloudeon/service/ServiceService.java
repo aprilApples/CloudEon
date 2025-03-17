@@ -2,11 +2,13 @@ package org.dromara.cloudeon.service;
 
 
 import cn.hutool.core.map.MapUtil;
+import com.alibaba.fastjson.JSON;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.cloudeon.config.CloudeonConfigProp;
 import org.dromara.cloudeon.dao.*;
+import org.dromara.cloudeon.domain.dto.ClusterAlertRuleAndNotifyInfo;
 import org.dromara.cloudeon.dto.NodeInfo;
 import org.dromara.cloudeon.dto.RoleNodeInfo;
 import org.dromara.cloudeon.entity.*;
@@ -144,8 +146,11 @@ public class ServiceService {
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
         }
-        List<ClusterAlertRuleEntity> clusterAlertRuleEntities = clusterAlertRuleRepository.findByClusterIdAndStackServiceName(clusterId, stackServiceEntity.getName());
-        dataModel.put("alertRules", clusterAlertRuleEntities);
+        // List<ClusterAlertRuleEntity> clusterAlertRuleEntities = clusterAlertRuleRepository.findByClusterIdAndStackServiceName(clusterId, stackServiceEntity.getName());
+        // 增加告警规则通知的配置
+        List<Map<String, String>> clusterAlertRuleAndNotifyInfoMapList = clusterAlertRuleRepository.findClusterAlertRuleAndNotifyInfo(clusterId, stackServiceEntity.getName());
+        List<ClusterAlertRuleAndNotifyInfo> clusterAlertRuleAndNotifyInfos = JSON.parseArray(JSON.toJSONString(clusterAlertRuleAndNotifyInfoMapList), ClusterAlertRuleAndNotifyInfo.class);
+        dataModel.put("alertRules", clusterAlertRuleAndNotifyInfos);
         // 获取该服务支持的自定义配置文件名
         String customConfigFiles = stackServiceEntity.getCustomConfigFiles();
         Map<String, Map<String, String>> confFiles = new HashMap<>();

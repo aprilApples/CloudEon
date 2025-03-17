@@ -13,13 +13,13 @@ import org.dromara.cloudeon.domain.req.AlertNotifyAddReq;
 import org.dromara.cloudeon.domain.req.AlertNotifyPageReq;
 import org.dromara.cloudeon.domain.req.AlertNotifyUpdateReq;
 import org.dromara.cloudeon.domain.vo.AlertNotifyPageInfoVO;
+import org.dromara.cloudeon.domain.vo.AlertRuleDropDownBoxVO;
 import org.dromara.cloudeon.domain.vo.JsonPage;
 import org.dromara.cloudeon.dto.ResultDTO;
 import org.dromara.cloudeon.entity.AlertNotifyEntity;
 import org.dromara.cloudeon.entity.AlertNotifyRuleRelationEntity;
 import org.dromara.cloudeon.entity.ClusterAlertRuleEntity;
 import org.dromara.cloudeon.entity.ServiceInstanceEntity;
-import org.dromara.cloudeon.enums.AlertNotifyStatus;
 import org.dromara.cloudeon.enums.CommandType;
 import org.dromara.cloudeon.service.AlertNotifyService;
 import org.dromara.cloudeon.service.CommandHandler;
@@ -30,6 +30,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import javax.transaction.Transactional;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -49,7 +50,7 @@ public class AlertNotifyServiceImpl implements AlertNotifyService {
 
     private final AlertNotifyRepository alertNotifyRepository;
 
-    private ClusterAlertRuleRepository clusterAlertRuleRepository;
+    private final ClusterAlertRuleRepository clusterAlertRuleRepository;
 
     private final ServiceInstanceRepository serviceInstanceRepository;
 
@@ -75,6 +76,7 @@ public class AlertNotifyServiceImpl implements AlertNotifyService {
     }
 
     @Override
+    @Transactional
     public ResultDTO<Void> add(AlertNotifyAddReq req) {
         List<Integer> alertNotifyIds = alertNotifyRuleRelationRepository.checkAlertRuleIdExist(null, req.getAlertRules());
         if (CollUtil.isNotEmpty(alertNotifyIds)) {
@@ -83,17 +85,17 @@ public class AlertNotifyServiceImpl implements AlertNotifyService {
         }
 
         AlertNotifyEntity alertNotifyAddEntity = BeanCopyUtils.deepCopy(req, AlertNotifyEntity.class);
-        alertNotifyAddEntity.setRecipients(String.join(",", req.getRecipients())).setCreateTime(new Date());
+        alertNotifyAddEntity.setRecipients(String.join(",", req.getRecipients())).setCreateTime(new Date()).setUpdateTime(new Date());
         AlertNotifyEntity alertNotifyEntity = alertNotifyRepository.save(alertNotifyAddEntity);
 
         saveAlertNotifyRuleRelationAndPublishK8s(req.getClusterId(), req.getEnableStatus(), req.getAlertRules(), alertNotifyEntity);
         return ResultDTO.success();
     }
 
-    private void saveAlertNotifyRuleRelationAndPublishK8s(Integer clusterId, Integer enableStatus, List<Integer> alertRules, AlertNotifyEntity alertNotifyEntity) {
+    private void saveAlertNotifyRuleRelationAndPublishK8s(Integer clusterId, Boolean enableStatus, List<Integer> alertRules, AlertNotifyEntity alertNotifyEntity) {
         List<AlertNotifyRuleRelationEntity> alertNotifyRuleRelationEntityList = buildAlertNotifyRuleRelationEntities(alertNotifyEntity.getId(), alertRules);
         alertNotifyRuleRelationRepository.saveAll(alertNotifyRuleRelationEntityList);
-        if (AlertNotifyStatus.DISABLE.getValue().equals(enableStatus)) {
+        if (!enableStatus) {
             return;
         }
         // 发布告警规则至k8s
@@ -122,19 +124,20 @@ public class AlertNotifyServiceImpl implements AlertNotifyService {
     }
 
     @Override
+    @Transactional
     public ResultDTO<Void> update(AlertNotifyUpdateReq req) {
         List<Integer> alertNotifyIds = alertNotifyRuleRelationRepository.checkAlertRuleIdExist(req.getId(), req.getAlertRules());
         if (CollUtil.isNotEmpty(alertNotifyIds)) {
             String alertNotifyName = alertNotifyRepository.findAllById(alertNotifyIds).stream().map(AlertNotifyEntity::getAlertNotifyName).collect(Collectors.joining(","));
             throw new RuntimeException("所选告警规则与以下告警通知" + alertNotifyName + "配置冲突，请检查后再添加");
         }
-        AlertNotifyEntity oriAlertNotifyEntity = alertNotifyRepository.getReferenceById(req.getId());
+        AlertNotifyEntity oriAlertNotifyEntity = alertNotifyRepository.findById(req.getId()).orElse(null);
         if (ObjectUtil.isEmpty(oriAlertNotifyEntity)) {
             throw new RuntimeException("当前告警通知不存在，请检查后再操作！");
         }
 
         AlertNotifyEntity alertNotifyEntity = BeanCopyUtils.deepCopy(req, AlertNotifyEntity.class);
-        alertNotifyEntity.setRecipients(String.join(",", req.getRecipients())).setUpdateTime(new Date());
+        alertNotifyEntity.setRecipients(String.join(",", req.getRecipients())).setCreateTime(oriAlertNotifyEntity.getCreateTime()).setUpdateTime(new Date());
         alertNotifyRepository.save(alertNotifyEntity);
 
         alertNotifyRuleRelationRepository.deleteByAlertNotifyIdIn(Collections.singletonList(req.getId()));
@@ -144,8 +147,9 @@ public class AlertNotifyServiceImpl implements AlertNotifyService {
     }
 
     @Override
+    @Transactional
     public ResultDTO<Void> delete(Integer id) {
-        AlertNotifyEntity oriAlertNotifyEntity = alertNotifyRepository.getReferenceById(id);
+        AlertNotifyEntity oriAlertNotifyEntity = alertNotifyRepository.findById(id).orElse(null);
         if (ObjectUtil.isEmpty(oriAlertNotifyEntity)) {
             throw new RuntimeException("当前告警通知不存在，请检查后再操作！");
         }
@@ -158,16 +162,26 @@ public class AlertNotifyServiceImpl implements AlertNotifyService {
     }
 
     @Override
-    public ResultDTO<Void> release(Integer id, Integer enableStatus) {
-        AlertNotifyEntity oriAlertNotifyEntity = alertNotifyRepository.getReferenceById(id);
+    public ResultDTO<Void> release(Integer id, Boolean enableStatus) {
+        AlertNotifyEntity oriAlertNotifyEntity = alertNotifyRepository.findById(id).orElse(null);
         if (ObjectUtil.isEmpty(oriAlertNotifyEntity)) {
             throw new RuntimeException("当前告警通知不存在，请检查后再操作！");
         }
-        oriAlertNotifyEntity.setEnableStatus(enableStatus).setUpdateTime(new Date());
+        oriAlertNotifyEntity.setEnableStatus(enableStatus).setCreateTime(oriAlertNotifyEntity.getCreateTime()).setUpdateTime(new Date());
         alertNotifyRepository.save(oriAlertNotifyEntity);
         List<Integer> alertRules = alertNotifyRuleRelationRepository.findByAlertNotifyIdIn(Collections.singletonList(id)).stream().map(AlertNotifyRuleRelationEntity::getAlertRuleId).collect(Collectors.toList());
         // 发布告警规则至k8s
         publishK8sUpdateAlertRules(oriAlertNotifyEntity.getClusterId(), alertRules);
         return ResultDTO.success();
+    }
+
+    @Override
+    public List<AlertRuleDropDownBoxVO> listAlertRules(Integer clusterId) {
+        List<ClusterAlertRuleEntity> alertRules = clusterAlertRuleRepository.findByClusterId(clusterId);
+        List<Integer> bindingAlertRules = alertNotifyRuleRelationRepository.findAlertRuleIdsByClusterId(clusterId);
+        if (CollUtil.isEmpty(bindingAlertRules)) {
+            return BeanCopyUtils.deepCopyList(alertRules, AlertRuleDropDownBoxVO.class);
+        }
+        return alertRules.stream().filter(item -> !bindingAlertRules.contains(item.getId())).map(item -> BeanCopyUtils.deepCopy(item, AlertRuleDropDownBoxVO.class)).collect(Collectors.toList());
     }
 }

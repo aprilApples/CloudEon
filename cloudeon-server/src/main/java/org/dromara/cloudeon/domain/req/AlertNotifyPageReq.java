@@ -14,9 +14,9 @@ public class AlertNotifyPageReq implements Serializable {
     private Integer clusterId;
 
     /**
-     * 启用状态 1启用 0 不启用
+     * 启用状态 true启用 false 不启用
      */
-    private Integer enableStatus;
+    private Boolean enableStatus;
 
     /**
      * 告警规则ID

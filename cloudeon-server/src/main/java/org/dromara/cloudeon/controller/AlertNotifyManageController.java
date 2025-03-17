@@ -11,6 +11,8 @@ import org.dromara.cloudeon.dto.ResultDTO;
 import org.dromara.cloudeon.service.AlertNotifyService;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/alert/notify")
@@ -38,19 +40,19 @@ public class AlertNotifyManageController {
         return alertNotifyService.update(req);
     }
 
-    @DeleteMapping
+    @DeleteMapping("/delete")
     public ResultDTO<Void> delete(@RequestParam("id") Integer id) {
         return alertNotifyService.delete(id);
     }
 
     @GetMapping("/release")
-    public ResultDTO<Void> release(@RequestParam("id") Integer id, @RequestParam("enableStatus") Integer enableStatus) {
+    public ResultDTO<Void> release(@RequestParam("id") Integer id, @RequestParam("enableStatus") Boolean enableStatus) {
         return alertNotifyService.release(id, enableStatus);
     }
 
-
     @GetMapping("/listAlertRules")
-    public ResultDTO<AlertRuleDropDownBoxVO> listAlertRules(@RequestParam("clusterId") Integer clusterId) {
-        return null;
+    public ResultDTO<List<AlertRuleDropDownBoxVO>> listAlertRules(@RequestParam("clusterId") Integer clusterId) {
+        List<AlertRuleDropDownBoxVO> results = alertNotifyService.listAlertRules(clusterId);
+        return ResultDTO.success(results);
     }
 }

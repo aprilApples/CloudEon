@@ -36,7 +36,8 @@ public class ClusterAlertRuleEntity implements Serializable {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator = "native")
-    @GenericGenerator(name = "native", strategy = "native")    private Integer id;
+    @GenericGenerator(name = "native", strategy = "native")
+    private Integer id;
 
     private Integer clusterId;
 
@@ -62,9 +63,4 @@ public class ClusterAlertRuleEntity implements Serializable {
     private Date createTime;
 
     private Date updateTime;
-
-
-
-
-
 }

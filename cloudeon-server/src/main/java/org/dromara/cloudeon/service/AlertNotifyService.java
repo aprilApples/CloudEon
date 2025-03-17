@@ -4,8 +4,11 @@ import org.dromara.cloudeon.domain.req.AlertNotifyAddReq;
 import org.dromara.cloudeon.domain.req.AlertNotifyPageReq;
 import org.dromara.cloudeon.domain.req.AlertNotifyUpdateReq;
 import org.dromara.cloudeon.domain.vo.AlertNotifyPageInfoVO;
+import org.dromara.cloudeon.domain.vo.AlertRuleDropDownBoxVO;
 import org.dromara.cloudeon.domain.vo.JsonPage;
 import org.dromara.cloudeon.dto.ResultDTO;
+
+import java.util.List;
 
 /**
  * @ Author: Wang Cen
@@ -23,5 +26,7 @@ public interface AlertNotifyService {
 
     ResultDTO<Void> delete(Integer id);
 
-    ResultDTO<Void> release(Integer id, Integer enableStatus);
+    ResultDTO<Void> release(Integer id, Boolean enableStatus);
+
+    List<AlertRuleDropDownBoxVO> listAlertRules(Integer clusterId);
 }
