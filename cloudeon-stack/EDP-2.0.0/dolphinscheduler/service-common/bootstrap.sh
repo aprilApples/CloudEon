@@ -9,7 +9,7 @@ mkdir -p /workspace/logs
 if [ -d /etc/flink-config ]; then
     \cp -f /etc/flink-config/* $FLINK_HOME/conf/
     # 支持flink on yarn模式
-    \cp -f /opt/service-render-output/flink-conf.yaml $FLINK_HOME/conf/
+    \cp -f /opt/service-render-output/flink-conf.yaml $FLINK_HOME/conf/flink-conf.yaml
 fi
 mkdir -p $DOLPHINSCHEDULER_HOME/conf
 \cp -f $HADOOP_CONF_DIR/*.xml $DOLPHINSCHEDULER_HOME/conf/
