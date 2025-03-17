@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Map;
 
@@ -16,11 +17,8 @@ import java.util.Map;
  * @ Description:
  */
 public interface AlertNotifyRepository extends JpaRepository<AlertNotifyEntity, Integer>, JpaSpecificationExecutor<AlertNotifyEntity> {
-
-    @Query(value = "select notify.*, rule.stack_service_name from gh_alert_notify_info notify left join gh_alert_notify_rule_relation relation on notify.id = relation.alert_notify_id left join ce_alert_rule_define rule on rule.id = relation.alert_rule_id" +
-            "where notify.cluster_id = ?1 and if(?2 is not null,notify.enable_status=?2 ,1=1) and if(?3 is not null,rule.id=?3 ,1=1)  and if(?4 !='',notify.recipients like ?4 ,1=1)",
-            countQuery = "select count(*) from gh_alert_notify_info notify left join gh_alert_notify_rule_relation relation on notify.id = relation.alert_notify_id left join ce_alert_rule_define rule on rule.id = relation.alert_rule_id" +
-                    "where notify.cluster_id = ?1 and if(?2 is not null,notify.enable_status=?2 ,1=1) and if(?3 is not null,rule.id=?3 ,1=1)  and if(?4 !='',notify.recipients like ?4 ,1=1)",
+    @Query(value = "SELECT notify.id, notify.cluster_id AS clusterId, notify.alert_notify_name AS alertNotifyName, notify.notify_type AS notifyType, notify.enable_status AS enableStatus, notify.recipients as recipient,notify.desp, notify.create_time AS createTime, notify.update_time AS updateTime FROM gh_alert_notify_info notify WHERE notify.cluster_id = :clusterId AND (:enableStatus IS NULL OR notify.enable_status = :enableStatus) AND (:recipients IS NULL OR :recipients = '' OR notify.recipients LIKE CONCAT('%', :recipients, '%')) AND (:ruleId IS NULL OR EXISTS (SELECT 1 FROM gh_alert_notify_rule_relation relation WHERE relation.alert_notify_id = notify.id AND relation.alert_rule_id = :ruleId ))",
+            countQuery = "SELECT count(*) FROM gh_alert_notify_info notify WHERE notify.cluster_id = :clusterId AND (:enableStatus IS NULL OR notify.enable_status = :enableStatus) AND (:recipients IS NULL OR :recipients = '' OR notify.recipients LIKE CONCAT('%', :recipients, '%')) AND (:ruleId IS NULL OR EXISTS (SELECT 1 FROM gh_alert_notify_rule_relation relation WHERE relation.alert_notify_id = notify.id AND relation.alert_rule_id = :ruleId ))",
             nativeQuery = true)
-    Page<Map<String, Object>> page(Integer clusterId, Integer enableStatus, Integer ruleId, String recipients, Pageable pageable);
+    Page<Map<String, Object>> page(@Param("clusterId") Integer clusterId, @Param("enableStatus") Boolean enableStatus, @Param("ruleId") Integer ruleId, @Param("recipients") String recipients, Pageable pageable);
 }

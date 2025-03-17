@@ -3,12 +3,15 @@ package org.dromara.cloudeon.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import io.vertx.core.Vertx;
 import org.dromara.cloudeon.dao.AlertNotifyRepository;
 import org.dromara.cloudeon.dao.AlertNotifyRuleRelationRepository;
 import org.dromara.cloudeon.dao.ClusterAlertRuleRepository;
 import org.dromara.cloudeon.dao.ServiceInstanceRepository;
+import org.dromara.cloudeon.domain.dto.AlertNotifyPageDTO;
+import org.dromara.cloudeon.domain.dto.ClusterAlertRuleAndNotifyRelationDTO;
 import org.dromara.cloudeon.domain.req.AlertNotifyAddReq;
 import org.dromara.cloudeon.domain.req.AlertNotifyPageReq;
 import org.dromara.cloudeon.domain.req.AlertNotifyUpdateReq;
@@ -31,10 +34,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.transaction.Transactional;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.dromara.cloudeon.utils.Constant.VERTX_COMMAND_ADDRESS;
@@ -66,13 +66,36 @@ public class AlertNotifyServiceImpl implements AlertNotifyService {
     @Override
     public JsonPage<AlertNotifyPageInfoVO> page(AlertNotifyPageReq req) {
         Pageable pageable = PageRequest.of(req.getPageNo() - 1, req.getPageSize());
-        String recipients = req.getRecipients();
-        if (StrUtil.isNotBlank(recipients)) {
-            recipients = "%" + req.getRecipients() + "%";
+        // 使用子查询保证分页的数量正确
+        Page<Map<String, Object>> pageResult = alertNotifyRepository.page(req.getClusterId(), req.getEnableStatus(), req.getRuleId(), req.getRecipients(), pageable);
+        List<AlertNotifyPageDTO> alertNotifyPageInfos = pageResult.getContent().stream().map(obj -> {
+            AlertNotifyPageDTO alertNotifyPageInfo = JSONObject.parseObject(JSONObject.toJSONString(obj), AlertNotifyPageDTO.class);
+            String recipient = alertNotifyPageInfo.getRecipient();
+            if (StrUtil.isNotBlank(recipient)) {
+                alertNotifyPageInfo.setRecipients(Arrays.asList(recipient.split(",")));
+            }
+            return alertNotifyPageInfo;
+        }).collect(Collectors.toList());
+        if(CollUtil.isEmpty(alertNotifyPageInfos)){
+            return new JsonPage(Long.valueOf(req.getPageNo()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), Collections.EMPTY_LIST);
         }
-        Page<Map<String, Object>> pageResult = alertNotifyRepository.page(req.getClusterId(), req.getEnableStatus(), req.getRuleId(), recipients, pageable);
+        List<AlertNotifyPageInfoVO> results = buildAlertNotifyPageInfos(alertNotifyPageInfos);
+        return new JsonPage(Long.valueOf(req.getPageNo()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), results);
+    }
 
-        return null;
+    private List<AlertNotifyPageInfoVO> buildAlertNotifyPageInfos(List<AlertNotifyPageDTO> alertNotifyPageInfos) {
+        List<Integer> alertNotifyIds = alertNotifyPageInfos.stream().map(AlertNotifyPageDTO::getId).collect(Collectors.toList());
+        Map<Integer, List<ClusterAlertRuleAndNotifyRelationDTO>> ruleRelationMap = clusterAlertRuleRepository.findClusterAlertRuleAndNotifyRelationInfo(alertNotifyIds).stream().map(item -> JSONObject.parseObject(JSONObject.toJSONString(item), ClusterAlertRuleAndNotifyRelationDTO.class)).collect(Collectors.groupingBy(ClusterAlertRuleAndNotifyRelationDTO::getAlertNotifyId));
+
+        return alertNotifyPageInfos.stream().map(item -> {
+            AlertNotifyPageInfoVO alertNotifyPageInfo = BeanCopyUtils.deepCopy(item, AlertNotifyPageInfoVO.class);
+            List<ClusterAlertRuleAndNotifyRelationDTO> clusterAlertRuleAndNotifyRelationInfos = ruleRelationMap.get(item.getId());
+            List<Integer> ids = clusterAlertRuleAndNotifyRelationInfos.stream().map(ClusterAlertRuleAndNotifyRelationDTO::getId).collect(Collectors.toList());
+            alertNotifyPageInfo.setAlertRules(ids);
+            Set<String> services = clusterAlertRuleAndNotifyRelationInfos.stream().map(ClusterAlertRuleAndNotifyRelationDTO::getStackServiceName).collect(Collectors.toSet());
+            alertNotifyPageInfo.setServices(new ArrayList<>(services));
+            return alertNotifyPageInfo;
+        }).collect(Collectors.toList());
     }
 
     @Override

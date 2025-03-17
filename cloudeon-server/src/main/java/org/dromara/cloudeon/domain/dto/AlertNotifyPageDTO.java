@@ -1,18 +1,21 @@
-package org.dromara.cloudeon.domain.vo;
+package org.dromara.cloudeon.domain.dto;
 
-
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
 @Data
-public class AlertNotifyPageInfoVO implements Serializable {
+@Accessors(chain = true)
+public class AlertNotifyPageDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * 主键
+     */
     private Integer id;
 
     /**
@@ -35,21 +38,10 @@ public class AlertNotifyPageInfoVO implements Serializable {
      */
     private Boolean enableStatus;
 
-
-    /**
-     * 框架服务类型 多个用逗号分隔
-     */
-    private List<String> services;
-
     /**
      * 接收者 多个用逗号分隔
      */
-    private List<String> recipients;
-
-    /**
-     * 告警规则 多个用逗号分隔
-     */
-    private List<Integer> alertRules;
+    private String recipient;
 
     /**
      * 描述
@@ -59,22 +51,15 @@ public class AlertNotifyPageInfoVO implements Serializable {
     /**
      * 创建时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date createTime;
 
     /**
      * 更新时间
      */
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date updateTime;
 
     /**
-     * 创建人
+     * 接收者 多个用逗号分隔
      */
-    private String createBy;
-
-    /**
-     * 更新人
-     */
-    private String updateBy;
+    private List<String> recipients;
 }
