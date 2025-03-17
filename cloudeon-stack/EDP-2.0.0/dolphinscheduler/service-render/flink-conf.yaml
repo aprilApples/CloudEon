@@ -1,0 +1,23 @@
+jobmanager.rpc.address: 0.0.0.0
+#jobmanager.rpc.port: 6123
+#jobmanager.bind-host: localhost
+jobmanager.memory.process.size: 1024m
+#taskmanager.bind-host: localhost
+taskmanager.host: 0.0.0.0
+taskmanager.memory.process.size: 1024m
+taskmanager.numberOfTaskSlots: 1
+parallelism.default: 1
+#jobmanager.execution.failover-strategy: region
+rest.address: 0.0.0.0
+rest.bind-address: 0.0.0.0
+jobmanager.archive.fs.dir: hdfs:///flink/completed-jobs/
+historyserver.web.address: k8s-node2
+historyserver.web.port: 8082
+historyserver.archive.fs.dir: hdfs:///flink/completed-jobs/
+historyserver.web.tmpdir: /data/1/tmp
+env.java.opts: -Dlog4j2.formatMsgNoLookups=true
+env.pid.dir: /workspace/pid
+env.log.dir: /workspace/logs
+historyserver.archive.fs.refresh-interval: 10000
+
+#yarn.application.name: k8s_Flink_on_YARN

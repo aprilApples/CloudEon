@@ -11,15 +11,16 @@ WORKDIR /tmp
 ENV SEATUNNEL_HOME=/opt/seatunnel
 ENV PATH=$PATH:$SEATUNNEL_HOME
 
-RUN tar -xvf /home/software/apache-seatunnel-2.3.5.tar -C /opt \
-    && mv /opt/*seatunnel*  $SEATUNNEL_HOME
+# 当前目录下需要 apache-seatunnel-2.3.5.tar包
+RUN tar -xvf apache-seatunnel-2.3.5.tar -C /opt \
+    && rm -f /tmp/apache-seatunnel-2.3.5.tar && mv /opt/*seatunnel*  $SEATUNNEL_HOME
 
 RUN wget https://mirrors.huaweicloud.com/apache/flink/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_2.12.tgz \
     && tar -zxvf flink-*.tgz -C /opt \
     && rm -f flink-*.tgz && mv /opt/flink-*  ${FLINK_HOME}
 
-# flink 增加jar包
-COPY /home/software/flink/commons-cli-1.4.jar ${FLINK_HOME}/lib
+# flink 增加jar包 当前目录下需要 commons-cli-1.4.jar包
+COPY commons-cli-1.4.jar ${FLINK_HOME}/lib
 
 ENV SPARK_HOME=/opt/spark
 ENV SPARK_VERSION=3.2.3
