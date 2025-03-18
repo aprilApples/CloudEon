@@ -32,10 +32,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -58,13 +55,13 @@ public class CommandController {
             return ResultDTO.success(Collections.emptyList());
         }
         List<Integer> commandIds = clusterSubmitCommandInfos.stream().map(CommandEntity::getId).collect(Collectors.toList());
-        Map<Integer, List<String>> commandIdServiceMap = commandTaskRepository.findAllById(commandIds)
+        Map<Integer, Set<String>> commandIdServiceMap = commandTaskRepository.findByCommandIdIn(commandIds)
                 .stream()
                 .collect(Collectors.groupingBy(
                         CommandTaskEntity::getCommandId,
                         Collectors.mapping(
                                 CommandTaskEntity::getServiceInstanceName,
-                                Collectors.toList()
+                                Collectors.toCollection(LinkedHashSet::new)
                         )
                 ));
 
@@ -74,7 +71,9 @@ public class CommandController {
                 CommandVO commandVO = new CommandVO();
                 BeanUtil.copyProperties(commandEntity, commandVO);
                 // 查出关联的commandTask找到对应的services
-                commandVO.setServiceNames(commandIdServiceMap.containsKey(commandEntity.getId()) ? commandIdServiceMap.get(commandEntity.getId()) : null);
+                Set<String> serviceNames = commandIdServiceMap.getOrDefault(
+                        commandEntity.getId(), Collections.emptySet());
+                commandVO.setServiceNames(new ArrayList<>(serviceNames));
                 return commandVO;
             }
         }).collect(Collectors.toList());

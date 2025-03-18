@@ -25,6 +25,8 @@ import java.util.List;
 public interface CommandTaskRepository extends JpaRepository<CommandTaskEntity, Integer> {
     List<CommandTaskEntity> findByCommandId(Integer commandId);
 
+    List<CommandTaskEntity> findByCommandIdIn(List<Integer> commandIds);
+
     public Integer countByCommandStateAndCommandId(CommandState commandState, Integer commandId);
     public Integer countByCommandId( Integer commandId);
 
