@@ -19,6 +19,11 @@ public class AlertNotifyPageReq implements Serializable {
     private Boolean enableStatus;
 
     /**
+     * 告警通知名称
+     */
+    private String alertNotifyName;
+
+    /**
      * 告警规则ID
      */
     private Integer ruleId;
@@ -29,7 +34,7 @@ public class AlertNotifyPageReq implements Serializable {
     private String recipients;
 
     @NotNull(message = "pageNo不能为空")
-    private Integer pageNo;
+    private Integer pageNum;
 
     @NotNull(message = "pageSize不能为空")
     private Integer pageSize;

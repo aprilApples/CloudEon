@@ -65,9 +65,9 @@ public class AlertNotifyServiceImpl implements AlertNotifyService {
 
     @Override
     public JsonPage<AlertNotifyPageInfoVO> page(AlertNotifyPageReq req) {
-        Pageable pageable = PageRequest.of(req.getPageNo() - 1, req.getPageSize());
+        Pageable pageable = PageRequest.of(req.getPageNum() - 1, req.getPageSize());
         // 使用子查询保证分页的数量正确
-        Page<Map<String, Object>> pageResult = alertNotifyRepository.page(req.getClusterId(), req.getEnableStatus(), req.getRuleId(), req.getRecipients(), pageable);
+        Page<Map<String, Object>> pageResult = alertNotifyRepository.page(req.getClusterId(), req.getEnableStatus(), req.getRuleId(), req.getRecipients(), req.getAlertNotifyName(), pageable);
         List<AlertNotifyPageDTO> alertNotifyPageInfos = pageResult.getContent().stream().map(obj -> {
             AlertNotifyPageDTO alertNotifyPageInfo = JSONObject.parseObject(JSONObject.toJSONString(obj), AlertNotifyPageDTO.class);
             String recipient = alertNotifyPageInfo.getRecipient();
@@ -76,11 +76,11 @@ public class AlertNotifyServiceImpl implements AlertNotifyService {
             }
             return alertNotifyPageInfo;
         }).collect(Collectors.toList());
-        if(CollUtil.isEmpty(alertNotifyPageInfos)){
-            return new JsonPage(Long.valueOf(req.getPageNo()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), Collections.EMPTY_LIST);
+        if (CollUtil.isEmpty(alertNotifyPageInfos)) {
+            return new JsonPage(Long.valueOf(req.getPageNum()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), Collections.EMPTY_LIST);
         }
         List<AlertNotifyPageInfoVO> results = buildAlertNotifyPageInfos(alertNotifyPageInfos);
-        return new JsonPage(Long.valueOf(req.getPageNo()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), results);
+        return new JsonPage(Long.valueOf(req.getPageNum()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), results);
     }
 
     private List<AlertNotifyPageInfoVO> buildAlertNotifyPageInfos(List<AlertNotifyPageDTO> alertNotifyPageInfos) {
