@@ -6,6 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import io.vertx.core.Vertx;
+import lombok.extern.slf4j.Slf4j;
 import org.dromara.cloudeon.dao.AlertNotifyRepository;
 import org.dromara.cloudeon.dao.AlertNotifyRuleRelationRepository;
 import org.dromara.cloudeon.dao.ClusterAlertRuleRepository;
@@ -40,6 +41,7 @@ import java.util.stream.Collectors;
 import static org.dromara.cloudeon.utils.Constant.VERTX_COMMAND_ADDRESS;
 
 @Service
+@Slf4j
 public class AlertNotifyServiceImpl implements AlertNotifyService {
 
     @Resource(name = "cloudeonVertx")
@@ -130,6 +132,10 @@ public class AlertNotifyServiceImpl implements AlertNotifyService {
         for (ClusterAlertRuleEntity clusterAlertRuleEntity : clusterAlertRuleEntities) {
             String stackServiceName = clusterAlertRuleEntity.getStackServiceName();
             ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findEntityByClusterIdAndStackServiceName(clusterId, stackServiceName);
+            if (ObjectUtil.isEmpty(serviceInstanceEntity)) {
+                log.info("当前集群并未配置:{} 组件", stackServiceName);
+                continue;
+            }
             //  生成刷新服务配置command
             List<ServiceInstanceEntity> serviceInstanceEntities = Lists.newArrayList(serviceInstanceEntity);
             Integer commandId = commandHandler.buildServiceCommand(serviceInstanceEntities, serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_SERVICE_CONFIG);
@@ -201,10 +207,9 @@ public class AlertNotifyServiceImpl implements AlertNotifyService {
     @Override
     public List<AlertRuleDropDownBoxVO> listAlertRules(Integer clusterId) {
         List<ClusterAlertRuleEntity> alertRules = clusterAlertRuleRepository.findByClusterId(clusterId);
-        List<Integer> bindingAlertRules = alertNotifyRuleRelationRepository.findAlertRuleIdsByClusterId(clusterId);
-        if (CollUtil.isEmpty(bindingAlertRules)) {
-            return BeanCopyUtils.deepCopyList(alertRules, AlertRuleDropDownBoxVO.class);
+        if (CollUtil.isEmpty(alertRules)) {
+            return Collections.emptyList();
         }
-        return alertRules.stream().filter(item -> !bindingAlertRules.contains(item.getId())).map(item -> BeanCopyUtils.deepCopy(item, AlertRuleDropDownBoxVO.class)).collect(Collectors.toList());
+        return BeanCopyUtils.deepCopyList(alertRules, AlertRuleDropDownBoxVO.class);
     }
 }

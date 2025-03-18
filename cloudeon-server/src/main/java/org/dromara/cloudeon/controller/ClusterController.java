@@ -136,22 +136,22 @@ public class ClusterController {
 
     @GetMapping("/list")
     public ResultDTO<List<ClusterInfoVO>> listClusterInfo() {
-        List<ClusterInfoVO> clusterInfoVOS = clusterInfoRepository.findAll().stream().map(new Function<ClusterInfoEntity, ClusterInfoVO>() {
+        List<ClusterInfoVO> clusterInfos = clusterInfoRepository.findAll().stream().map(new Function<ClusterInfoEntity, ClusterInfoVO>() {
             @Override
             public ClusterInfoVO apply(ClusterInfoEntity clusterInfoEntity) {
-                ClusterInfoVO clusterInfoVO = new ClusterInfoVO();
+                ClusterInfoVO clusterInfo = new ClusterInfoVO();
                 Integer clusterId = clusterInfoEntity.getId();
-                BeanUtils.copyProperties(clusterInfoEntity,clusterInfoVO);
+                BeanUtils.copyProperties(clusterInfoEntity,clusterInfo);
                 // 查询节点数
                 Integer nodeCnt = clusterNodeRepository.countByClusterId(clusterId);
                 // 查询服务数
                 Integer serviceCnt = serviceInstanceRepository.countByClusterId(clusterId);
-                clusterInfoVO.setNodeCnt(nodeCnt);
-                clusterInfoVO.setServiceCnt(serviceCnt);
-                return clusterInfoVO;
+                clusterInfo.setNodeCnt(nodeCnt);
+                clusterInfo.setServiceCnt(serviceCnt);
+                return clusterInfo;
             }
         }).collect(Collectors.toList());
-        return ResultDTO.success(clusterInfoVOS);
+        return ResultDTO.success(clusterInfos);
     }
 
 

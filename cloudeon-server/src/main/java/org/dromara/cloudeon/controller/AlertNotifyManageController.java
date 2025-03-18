@@ -52,7 +52,6 @@ public class AlertNotifyManageController {
 
     @GetMapping("/listAlertRules")
     public ResultDTO<List<AlertRuleDropDownBoxVO>> listAlertRules(@RequestParam("clusterId") Integer clusterId) {
-        List<AlertRuleDropDownBoxVO> results = alertNotifyService.listAlertRules(clusterId);
-        return ResultDTO.success(results);
+        return ResultDTO.success(alertNotifyService.listAlertRules(clusterId));
     }
 }
