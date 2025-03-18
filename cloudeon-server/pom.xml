@@ -32,12 +32,6 @@
     </properties>
 
     <dependencies>
-        <!-- 需要依赖前端模块,否则无法打包进后端系统,前端模块将会打一个空的jar包 -->
-        <dependency>
-            <groupId>org.dromara</groupId>
-            <artifactId>cloudeon-ui</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <!-- lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
