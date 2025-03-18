@@ -17,6 +17,7 @@
 package org.dromara.cloudeon.controller;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import org.dromara.cloudeon.controller.response.CommandDetailVO;
 import org.dromara.cloudeon.controller.response.CommandVO;
 import org.dromara.cloudeon.dao.CommandRepository;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -51,33 +53,38 @@ public class CommandController {
 
     @GetMapping("/list")
     public ResultDTO<List<CommandVO>> listCommand(Integer clusterId) {
-        List<CommandVO> result;
-        result = commandRepository.findByClusterIdOrderBySubmitTimeDesc(clusterId).stream().map(new Function<CommandEntity, CommandVO>() {
+        List<CommandEntity> clusterSubmitCommandInfos = commandRepository.findByClusterIdOrderBySubmitTimeDesc(clusterId);
+        if (CollUtil.isEmpty(clusterSubmitCommandInfos)) {
+            return ResultDTO.success(Collections.emptyList());
+        }
+        List<Integer> commandIds = clusterSubmitCommandInfos.stream().map(CommandEntity::getId).collect(Collectors.toList());
+        Map<Integer, List<String>> commandIdServiceMap = commandTaskRepository.findAllById(commandIds)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        CommandTaskEntity::getCommandId,
+                        Collectors.mapping(
+                                CommandTaskEntity::getServiceInstanceName,
+                                Collectors.toList()
+                        )
+                ));
+
+        List<CommandVO> result = clusterSubmitCommandInfos.stream().map(new Function<CommandEntity, CommandVO>() {
             @Override
             public CommandVO apply(CommandEntity commandEntity) {
                 CommandVO commandVO = new CommandVO();
                 BeanUtil.copyProperties(commandEntity, commandVO);
-                // 查出关联的commandTask
-                List<CommandTaskEntity> taskEntities = commandTaskRepository.findByCommandId(commandEntity.getId());
-                List<String> serviceNames = taskEntities.stream().map(new Function<CommandTaskEntity, String>() {
-                    @Override
-                    public String apply(CommandTaskEntity commandTaskEntity) {
-                        return commandTaskEntity.getServiceInstanceName();
-                    }
-                }).distinct().collect(Collectors.toList());
-                commandVO.setServiceNames(serviceNames);
+                // 查出关联的commandTask找到对应的services
+                commandVO.setServiceNames(commandIdServiceMap.containsKey(commandEntity.getId()) ? commandIdServiceMap.get(commandEntity.getId()) : null);
                 return commandVO;
             }
         }).collect(Collectors.toList());
-
-
 
         return ResultDTO.success(result);
     }
 
     @GetMapping("/countActive")
     public ResultDTO<Long> countActive(Integer clusterId) {
-        long result = commandRepository.countByCommandStateAndClusterId(CommandState.RUNNING,clusterId);
+        long result = commandRepository.countByCommandStateAndClusterId(CommandState.RUNNING, clusterId);
         return ResultDTO.success(result);
     }
 
@@ -110,19 +117,19 @@ public class CommandController {
                 long totalCnt = commandTaskEntities.stream().count();
                 String currentState = "";
                 Map<CommandState, List<CommandTaskEntity>> commandStateListMap = commandTaskEntities.stream().collect(Collectors.groupingBy(CommandTaskEntity::getCommandState));
-                if (commandStateListMap.get(CommandState.ERROR)!=null && commandStateListMap.get(CommandState.ERROR).size() > 0) {
+                if (commandStateListMap.get(CommandState.ERROR) != null && commandStateListMap.get(CommandState.ERROR).size() > 0) {
                     currentState = CommandState.ERROR.name();
                 }
-                if (commandStateListMap.get(CommandState.RUNNING)!=null && commandStateListMap.get(CommandState.RUNNING).size() > 0) {
+                if (commandStateListMap.get(CommandState.RUNNING) != null && commandStateListMap.get(CommandState.RUNNING).size() > 0) {
                     currentState = CommandState.RUNNING.name();
                 }
-                if (commandStateListMap.get(CommandState.WAITING)!=null && commandStateListMap.get(CommandState.WAITING).size() == commandTaskEntities.size()) {
+                if (commandStateListMap.get(CommandState.WAITING) != null && commandStateListMap.get(CommandState.WAITING).size() == commandTaskEntities.size()) {
                     currentState = CommandState.WAITING.name();
                 }
-                if (commandStateListMap.get(CommandState.SUCCESS)!=null && commandStateListMap.get(CommandState.SUCCESS).size() == commandTaskEntities.size()) {
+                if (commandStateListMap.get(CommandState.SUCCESS) != null && commandStateListMap.get(CommandState.SUCCESS).size() == commandTaskEntities.size()) {
                     currentState = CommandState.SUCCESS.name();
                 }
-                return new ServiceProgress(currentState, serviceTaskMap.getKey(),serviceTaskMap.getValue(),totalCnt,successCnt);
+                return new ServiceProgress(currentState, serviceTaskMap.getKey(), serviceTaskMap.getValue(), totalCnt, successCnt);
             }
         }).collect(Collectors.toList());
 
