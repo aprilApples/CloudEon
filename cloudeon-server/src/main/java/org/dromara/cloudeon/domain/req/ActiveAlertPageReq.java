@@ -16,12 +16,12 @@ public class ActiveAlertPageReq implements Serializable {
     /**
      * 服务ID
      */
-    private Integer serviceId;
+    private Integer activeServiceId;
 
     /**
      * 角色ID
      */
-    private Integer roleId;
+    private Integer activeRoleId;
 
     @NotNull(message = "pageNo不能为空")
     private Integer pageNum;

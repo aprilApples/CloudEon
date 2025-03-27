@@ -21,9 +21,9 @@ public class AlertRulePageReq implements Serializable {
 
     private String ruleName;
 
-    private String stackRoleName;
+    private String ruleStackRoleName;
 
-    private String stackServiceName;
+    private String ruleStackServiceName;
 
     @NotNull(message = "pageNo不能为空")
     private Integer pageNum;

@@ -285,11 +285,11 @@ public class AlertController {
             predicates.add(criteriaBuilder.equal(root.get("clusterId"), req.getClusterId()));
             predicates.add(criteriaBuilder.equal(root.get("resolved"), true));
             Order order = criteriaBuilder.desc(root.get("updateTime"));
-            if (ObjectUtil.isNotEmpty(req.getServiceId())) {
-                predicates.add(criteriaBuilder.equal(root.get("serviceInstanceId"), req.getServiceId()));
+            if (ObjectUtil.isNotEmpty(req.getHistoryServiceId())) {
+                predicates.add(criteriaBuilder.equal(root.get("serviceInstanceId"), req.getHistoryServiceId()));
             }
-            if (ObjectUtil.isNotEmpty(req.getRoleId())) {
-                predicates.add(criteriaBuilder.equal(root.get("serviceRoleInstanceId"), req.getRoleId()));
+            if (ObjectUtil.isNotEmpty(req.getHistoryRoleId())) {
+                predicates.add(criteriaBuilder.equal(root.get("serviceRoleInstanceId"), req.getHistoryRoleId()));
             }
             if (ObjectUtil.isNotEmpty(req.getStartTime())) {
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), req.getStartTime()));
@@ -344,11 +344,11 @@ public class AlertController {
             predicates.add(criteriaBuilder.equal(root.get("clusterId"), req.getClusterId()));
             predicates.add(criteriaBuilder.equal(root.get("resolved"), false));
             Order order = criteriaBuilder.desc(root.get("updateTime"));
-            if (ObjectUtil.isNotEmpty(req.getServiceId())) {
-                predicates.add(criteriaBuilder.equal(root.get("serviceInstanceId"), req.getServiceId()));
+            if (ObjectUtil.isNotEmpty(req.getActiveServiceId())) {
+                predicates.add(criteriaBuilder.equal(root.get("serviceInstanceId"), req.getActiveServiceId()));
             }
-            if (ObjectUtil.isNotEmpty(req.getRoleId())) {
-                predicates.add(criteriaBuilder.equal(root.get("serviceRoleInstanceId"), req.getRoleId()));
+            if (ObjectUtil.isNotEmpty(req.getActiveRoleId())) {
+                predicates.add(criteriaBuilder.equal(root.get("serviceRoleInstanceId"), req.getActiveRoleId()));
             }
             Predicate predicate = criteriaBuilder.and(predicates.toArray(new Predicate[0]));
             return criteriaQuery.where(predicate).orderBy(order).getRestriction();
@@ -400,11 +400,11 @@ public class AlertController {
             if (ObjectUtil.isNotEmpty(req.getRuleName())) {
                 predicates.add(criteriaBuilder.equal(root.get("stackRoleName"), "%" + req.getRuleName() + "%"));
             }
-            if (ObjectUtil.isNotEmpty(req.getStackServiceName())) {
-                predicates.add(criteriaBuilder.equal(root.get("stackServiceName"), req.getStackServiceName()));
+            if (ObjectUtil.isNotEmpty(req.getRuleStackServiceName())) {
+                predicates.add(criteriaBuilder.equal(root.get("stackServiceName"), req.getRuleStackServiceName()));
             }
-            if (ObjectUtil.isNotEmpty(req.getStackRoleName())) {
-                predicates.add(criteriaBuilder.equal(root.get("stackRoleName"), req.getStackRoleName()));
+            if (ObjectUtil.isNotEmpty(req.getRuleStackRoleName())) {
+                predicates.add(criteriaBuilder.equal(root.get("stackRoleName"), req.getRuleStackRoleName()));
             }
             Predicate predicate = criteriaBuilder.and(predicates.toArray(new Predicate[0]));
             return criteriaQuery.where(predicate).orderBy(order).getRestriction();
