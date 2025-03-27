@@ -142,7 +142,7 @@ public class AlertController {
                 ServiceRoleInstanceEntity serviceRoleInstanceEntity = roleInstanceRepository.findByServiceRoleNameAndClusterIdAndHostname(clusterId, serviceRoleName, hostname);
 
                 alertMessageEntity.setHostname(hostname);
-                alertMessageEntity.setServiceRoleInstanceId(serviceRoleInstanceEntity.getServiceInstanceId());
+                alertMessageEntity.setServiceRoleInstanceId(serviceRoleInstanceEntity.getId());
                 alertMessageEntity.setNodeId(nodeId);
             }
             return alertMessageEntity;
