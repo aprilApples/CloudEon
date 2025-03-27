@@ -17,6 +17,7 @@
 package org.dromara.cloudeon.controller;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
@@ -25,9 +26,12 @@ import org.dromara.cloudeon.controller.request.RoleAllocationRequest;
 import org.dromara.cloudeon.controller.request.ValidServicesDepRequest;
 import org.dromara.cloudeon.controller.response.*;
 import org.dromara.cloudeon.dao.*;
+import org.dromara.cloudeon.domain.vo.ClusterRoleInstanceDropDownBoxVO;
+import org.dromara.cloudeon.domain.vo.ClusterServiceInstanceDropDownBoxVO;
 import org.dromara.cloudeon.dto.ResultDTO;
 import org.dromara.cloudeon.dto.StackService;
 import org.dromara.cloudeon.entity.*;
+import org.dromara.cloudeon.utils.BeanCopyUtils;
 import org.springframework.data.domain.Example;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,10 +71,31 @@ public class StackController {
     @Resource
     private ClusterNodeRepository clusterNodeRepository;
 
+    @Resource
+    private ServiceRoleInstanceRepository serviceRoleInstanceRepository;
+
+
+    @GetMapping("/listClusterServiceInfos")
+    public ResultDTO<List<ClusterServiceInstanceDropDownBoxVO>> listClusterServiceInfos(Integer clusterId) {
+        List<ServiceInstanceEntity> serviceInfos = serviceInstanceRepository.findByClusterId(clusterId);
+        if (CollUtil.isEmpty(serviceInfos)) {
+            return ResultDTO.success(Collections.emptyList());
+        }
+        return ResultDTO.success(BeanCopyUtils.deepCopyList(serviceInfos, ClusterServiceInstanceDropDownBoxVO.class));
+    }
+
+    @GetMapping("/listClusterRoleInfos")
+    public ResultDTO<List<ClusterRoleInstanceDropDownBoxVO>> listClusterRoleInfos(Integer clusterId) {
+        List<ServiceRoleInstanceEntity> roleInstanceInfos = serviceRoleInstanceRepository.findByClusterId(clusterId);
+        if (CollUtil.isEmpty(roleInstanceInfos)) {
+            return ResultDTO.success(Collections.emptyList());
+        }
+        return ResultDTO.success(BeanCopyUtils.deepCopyList(roleInstanceInfos, ClusterRoleInstanceDropDownBoxVO.class));
+    }
 
     @GetMapping("/list")
     public ResultDTO<List<StackInfoVO>> listStackInfo() {
-        List<StackInfoEntity> stackInfoEntities= stackInfoRepository.findAll();
+        List<StackInfoEntity> stackInfoEntities = stackInfoRepository.findAll();
         List<StackInfoVO> result = stackInfoEntities.stream().map(e -> {
             StackInfoVO stackInfoVO = new StackInfoVO();
             BeanUtil.copyProperties(e, stackInfoVO);
@@ -286,16 +311,16 @@ public class StackController {
     public ResultDTO<Map<String, List<String>>> mapStackServiceRoles(Integer stackId) {
         Map<String, List<String>> result = new HashMap<>();
         List<StackServiceEntity> serviceEntities = serviceRepository.findByStackId(stackId);
-        serviceEntities.stream().forEach(e->{
+        serviceEntities.stream().forEach(e -> {
             // 查詢角色
             Integer serviceId = e.getId();
             String serviceName = e.getName();
-            serviceRoleRepository.findByServiceIdAndStackId(serviceId, stackId).stream().forEach(r->{
+            serviceRoleRepository.findByServiceIdAndStackId(serviceId, stackId).stream().forEach(r -> {
                 String roleName = r.getName();
                 List<String> roles = result.get(serviceName);
                 if (roles == null) {
                     result.put(serviceName, Lists.newArrayList(roleName));
-                }else{
+                } else {
                     roles.add(roleName);
                 }
             });

@@ -18,13 +18,14 @@ package org.dromara.cloudeon.dao;
 
 import org.dromara.cloudeon.entity.ClusterAlertRuleEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Map;
 
-public interface ClusterAlertRuleRepository extends JpaRepository<ClusterAlertRuleEntity, Integer> {
+public interface ClusterAlertRuleRepository extends JpaRepository<ClusterAlertRuleEntity, Integer>, JpaSpecificationExecutor<ClusterAlertRuleEntity> {
 
     List<ClusterAlertRuleEntity> findByClusterId(Integer clusterId);
 
