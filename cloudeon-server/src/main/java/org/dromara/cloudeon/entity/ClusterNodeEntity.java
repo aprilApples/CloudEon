@@ -65,11 +65,11 @@ public class ClusterNodeEntity implements Serializable {
     /**
      * 总内存
      */
-    private Integer totalMem;
+    private String totalMem;
     /**
      * 总磁盘
      */
-    private Integer totalDisk;
+    private String totalDisk;
 
     private String sshUser;
     private String sshPassword;
