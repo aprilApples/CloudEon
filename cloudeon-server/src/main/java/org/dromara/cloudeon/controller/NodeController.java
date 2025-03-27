@@ -32,11 +32,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -88,8 +84,8 @@ public class NodeController {
      * 根据集群id查询绑定的k8s节点信息
      */
     @GetMapping("/list")
+    @Transactional
     public ResultDTO<List<NodeInfoVO>> listNode(Integer clusterId) {
-        List<NodeInfoVO> result;
         // 获取k8s集群节点信息
         Map<String, Node> nodeMap = kubeService.executeWithKubeClient(clusterId, kubeClient -> {
             List<Node> items = kubeClient.nodes().list().getItems();
@@ -97,16 +93,29 @@ public class NodeController {
         });
         // 从数据库查出当前集群绑定的节点
         List<ClusterNodeEntity> nodeEntities = clusterNodeRepository.findByClusterId(clusterId);
-        result = nodeEntities.stream().map(nodeEntity -> {
+
+        // 持久化node的最新信息
+        List<ClusterNodeEntity> updateClusterNodeInfos = new ArrayList<>();
+
+        List<NodeInfoVO> k8sNodeInfos = nodeEntities.stream().map(nodeEntity -> {
             // 从map中获得k8s上最新的节点信息
             Node node = nodeMap.get(nodeEntity.getIp());
-            NodeInfoVO nodeInfoVO = getNodeInfoVO(node);
-            nodeInfoVO.setId(nodeEntity.getId());
-            nodeInfoVO.setClusterId(nodeEntity.getClusterId());
-            nodeInfoVO.setCreateTime(nodeEntity.getCreateTime());
-            return nodeInfoVO;
+            NodeInfoVO k8sNodeInfo = getNodeInfoVO(node);
+            k8sNodeInfo.setId(nodeEntity.getId());
+            k8sNodeInfo.setClusterId(nodeEntity.getClusterId());
+            k8sNodeInfo.setCreateTime(nodeEntity.getCreateTime());
+
+            nodeEntity.setCoreNum(k8sNodeInfo.getCoreNum());
+            nodeEntity.setTotalMem(k8sNodeInfo.getTotalMem());
+            nodeEntity.setTotalDisk(k8sNodeInfo.getTotalDisk());
+            nodeEntity.setCpuArchitecture(k8sNodeInfo.getCpuArchitecture());
+            updateClusterNodeInfos.add(nodeEntity);
+            return k8sNodeInfo;
         }).collect(Collectors.toList());
-        return ResultDTO.success(result);
+
+        clusterNodeRepository.saveAll(updateClusterNodeInfos);
+
+        return ResultDTO.success(k8sNodeInfos);
     }
 
 
@@ -116,14 +125,10 @@ public class NodeController {
     @GetMapping("/listK8sNode")
     public ResultDTO<List<NodeInfoVO>> listK8sNode(Integer clusterId) {
         // 从数据库查出已经和集群绑定的k8s节点
-        Set<String> clusterIpSets = clusterNodeRepository.findAll().stream().map(new Function<ClusterNodeEntity, String>() {
-            @Override
-            public String apply(ClusterNodeEntity clusterNodeEntity) {
-                return clusterNodeEntity.getIp();
-            }
-        }).collect(Collectors.toSet());
+        List<ClusterNodeEntity> clusterNodeInfos = clusterNodeRepository.findByClusterId(clusterId);
+        Set<String> clusterIpSets = clusterNodeInfos.stream().map(ClusterNodeEntity::getIp).collect(Collectors.toSet());
         // 通过集群id连接k8s集群
-        List<NodeInfoVO> result = kubeService.executeWithKubeClient(clusterId, kubeClient -> {
+        List<NodeInfoVO> k8sNodeInfos = kubeService.executeWithKubeClient(clusterId, kubeClient -> {
             // 获取k8s集群节点信息
             return kubeClient.nodes().list().getItems().stream().filter(node -> {
                 String ip = getNodeIp(node);
@@ -131,7 +136,7 @@ public class NodeController {
                 return !clusterIpSets.contains(ip);
             }).map(this::getNodeInfoVO).collect(Collectors.toList());
         });
-        return ResultDTO.success(result);
+        return ResultDTO.success(k8sNodeInfos);
     }
 
     private NodeInfoVO getNodeInfoVO(Node e) {
@@ -141,7 +146,7 @@ public class NodeController {
         int cpu = e.getStatus().getCapacity().get("cpu").getNumericalAmount().intValue();
         long memory = e.getStatus().getCapacity().get("memory").getNumericalAmount().longValue();
         long storage = e.getStatus().getCapacity().get("ephemeral-storage").getNumericalAmount().longValue();
-        String ip =  getNodeIp(e);
+        String ip = getNodeIp(e);
         String hostname = getNodeHostname(e);
         String architecture = e.getStatus().getNodeInfo().getArchitecture();
         String containerRuntimeVersion = e.getStatus().getNodeInfo().getContainerRuntimeVersion();
@@ -149,7 +154,7 @@ public class NodeController {
         String kernelVersion = e.getStatus().getNodeInfo().getKernelVersion();
         String osImage = e.getStatus().getNodeInfo().getOsImage();
 
-        NodeInfoVO nodeInfoVO = NodeInfoVO.builder()
+        return NodeInfoVO.builder()
                 .ip(ip)
                 .hostname(hostname)
                 .cpuArchitecture(architecture)
@@ -161,7 +166,6 @@ public class NodeController {
                 .containerRuntimeVersion(containerRuntimeVersion)
                 .osImage(osImage)
                 .build();
-        return nodeInfoVO;
     }
 
     private String getNodeIp(Node e) {

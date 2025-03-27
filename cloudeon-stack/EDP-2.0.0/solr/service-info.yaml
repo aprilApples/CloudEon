@@ -1,5 +1,5 @@
 name: SOLR
-label: "solr"
+label: "Solr"
 description: "企业级的搜索引擎系统"
 # 版本号
 version: 8.11.4
