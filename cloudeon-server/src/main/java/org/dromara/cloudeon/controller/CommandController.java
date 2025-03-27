@@ -18,24 +18,30 @@ package org.dromara.cloudeon.controller;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import org.dromara.cloudeon.controller.response.CommandDetailVO;
 import org.dromara.cloudeon.controller.response.CommandVO;
 import org.dromara.cloudeon.dao.CommandRepository;
 import org.dromara.cloudeon.dao.CommandTaskRepository;
+import org.dromara.cloudeon.domain.req.CommandPageReq;
+import org.dromara.cloudeon.domain.vo.JsonPage;
 import org.dromara.cloudeon.dto.ResultDTO;
 import org.dromara.cloudeon.dto.ServiceProgress;
 import org.dromara.cloudeon.entity.CommandEntity;
 import org.dromara.cloudeon.entity.CommandTaskEntity;
 import org.dromara.cloudeon.enums.CommandState;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.persistence.criteria.Order;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/command")
@@ -48,22 +54,14 @@ public class CommandController {
     private CommandTaskRepository commandTaskRepository;
 
 
+    @Deprecated
     @GetMapping("/list")
     public ResultDTO<List<CommandVO>> listCommand(Integer clusterId) {
         List<CommandEntity> clusterSubmitCommandInfos = commandRepository.findByClusterIdOrderBySubmitTimeDesc(clusterId);
         if (CollUtil.isEmpty(clusterSubmitCommandInfos)) {
             return ResultDTO.success(Collections.emptyList());
         }
-        List<Integer> commandIds = clusterSubmitCommandInfos.stream().map(CommandEntity::getId).collect(Collectors.toList());
-        Map<Integer, Set<String>> commandIdServiceMap = commandTaskRepository.findByCommandIdIn(commandIds)
-                .stream()
-                .collect(Collectors.groupingBy(
-                        CommandTaskEntity::getCommandId,
-                        Collectors.mapping(
-                                CommandTaskEntity::getServiceInstanceName,
-                                Collectors.toCollection(LinkedHashSet::new)
-                        )
-                ));
+        Map<Integer, Set<String>> commandIdServiceMap = getCommandServiceMap(clusterSubmitCommandInfos.stream());
 
         List<CommandVO> result = clusterSubmitCommandInfos.stream().map(new Function<CommandEntity, CommandVO>() {
             @Override
@@ -79,6 +77,70 @@ public class CommandController {
         }).collect(Collectors.toList());
 
         return ResultDTO.success(result);
+    }
+
+    /**
+     * 指令分页查询
+     */
+    @PostMapping("/pageCommandInfos")
+    public ResultDTO<JsonPage<CommandVO>> pageCommandInfos(@RequestBody CommandPageReq req) {
+        Page<CommandEntity> pageResult = getCommandPageEntity(req);
+        if (CollUtil.isEmpty(pageResult.getContent())) {
+            return ResultDTO.success(new JsonPage(Long.valueOf(req.getPageNum()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), Collections.emptyList()));
+        }
+        // 获取关联服务类型
+        Map<Integer, Set<String>> commandIdServiceMap = getCommandServiceMap(pageResult.get());
+        // 构建分页对象
+        JsonPage jsonPage = new JsonPage(Long.valueOf(req.getPageNum()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), buildCommandPageInfos(pageResult, commandIdServiceMap));
+        return ResultDTO.success(jsonPage);
+    }
+
+    private List<CommandVO> buildCommandPageInfos(Page<CommandEntity> pageResult, Map<Integer, Set<String>> commandIdServiceMap) {
+        List<CommandVO> results = pageResult.get().map(commandEntity -> {
+            CommandVO commandVO = new CommandVO();
+            BeanUtil.copyProperties(commandEntity, commandVO);
+            // 查出关联的commandTask找到对应的services
+            Set<String> serviceNames = commandIdServiceMap.getOrDefault(
+                    commandEntity.getId(), Collections.emptySet());
+            commandVO.setServiceNames(new ArrayList<>(serviceNames));
+            return commandVO;
+        }).collect(Collectors.toList());
+        return results;
+    }
+
+    private Map<Integer, Set<String>> getCommandServiceMap(Stream<CommandEntity> pageResult) {
+        List<Integer> commandIds = pageResult.map(CommandEntity::getId).collect(Collectors.toList());
+        Map<Integer, Set<String>> commandIdServiceMap = commandTaskRepository.findByCommandIdIn(commandIds)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        CommandTaskEntity::getCommandId,
+                        Collectors.mapping(
+                                CommandTaskEntity::getServiceInstanceName,
+                                Collectors.toCollection(LinkedHashSet::new)
+                        )
+                ));
+        return commandIdServiceMap;
+    }
+
+    private Page<CommandEntity> getCommandPageEntity(CommandPageReq req) {
+        Pageable pageable = PageRequest.of(req.getPageNum() - 1, req.getPageSize());
+
+        return commandRepository.findAll((root, criteriaQuery, criteriaBuilder) -> {
+            List<javax.persistence.criteria.Predicate> predicates = new ArrayList<>();
+            predicates.add(criteriaBuilder.equal(root.get("clusterId"), req.getClusterId()));
+            Order order = criteriaBuilder.desc(root.get("submitTime"));
+            if (ObjectUtil.isNotEmpty(req.getCommandState())) {
+                predicates.add(criteriaBuilder.equal(root.get("commandState"), req.getCommandState()));
+            }
+            if (ObjectUtil.isNotEmpty(req.getStartTime())) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("submitTime"), req.getStartTime()));
+            }
+            if (ObjectUtil.isNotEmpty(req.getEndTime())) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("submitTime"), req.getEndTime()));
+            }
+            javax.persistence.criteria.Predicate predicate = criteriaBuilder.and(predicates.toArray(new javax.persistence.criteria.Predicate[0]));
+            return criteriaQuery.where(predicate).orderBy(order).getRestriction();
+        }, pageable);
     }
 
     @GetMapping("/countActive")

@@ -19,12 +19,13 @@ package org.dromara.cloudeon.dao;
 import org.dromara.cloudeon.entity.CommandEntity;
 import org.dromara.cloudeon.enums.CommandState;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
-public interface CommandRepository extends JpaRepository<CommandEntity, Integer> {
+public interface CommandRepository extends JpaRepository<CommandEntity, Integer>, JpaSpecificationExecutor<CommandEntity> {
     List<CommandEntity> findByClusterIdOrderBySubmitTimeDesc(Integer clusterId);
 
     long countByCommandStateAndClusterId(CommandState commandState, Integer clusterId);

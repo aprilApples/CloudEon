@@ -280,57 +280,62 @@ public class AlertController {
     @PostMapping("/pageHistoryAlertInfos")
     public ResultDTO<JsonPage<HistoryAlertVO>> pageHistoryAlertInfos(@RequestBody HistoryAlertPageReq req) {
         Pageable pageable = PageRequest.of(req.getPageNum() - 1, req.getPageSize());
-        Page<AlertMessageEntity> pageResult = alertMessageRepository.findAll((root, criteriaQuery, criteriaBuilder) -> {
+        Page<AlertMessageEntity> pageResult = getAlertMessagePageEntities(req.getClusterId(), req.getHistoryServiceId(), req.getHistoryRoleId(), Boolean.TRUE, req.getStartTime(), req.getEndTime(), pageable);
+
+        List<HistoryAlertVO> results = pageResult.get().map(this::buildHistoryAlertInfo).collect(Collectors.toList());
+        JsonPage jsonPage = new JsonPage(Long.valueOf(req.getPageNum()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), results);
+
+        return ResultDTO.success(jsonPage);
+    }
+
+    private HistoryAlertVO buildHistoryAlertInfo(AlertMessageEntity alertMessageEntity) {
+        Integer serviceInstanceId = alertMessageEntity.getServiceInstanceId();
+        Integer roleInstanceId = alertMessageEntity.getServiceRoleInstanceId();
+        HistoryAlertVO historyAlertInfo = HistoryAlertVO.builder()
+                .alertId(alertMessageEntity.getId())
+                .alertLevelMsg(alertMessageEntity.getAlertLevel().getDesc())
+                .alertName(alertMessageEntity.getAlertName())
+                .createTime(alertMessageEntity.getCreateTime())
+                .updateTime(alertMessageEntity.getUpdateTime())
+                .serviceInstanceId(serviceInstanceId)
+                .hostname(alertMessageEntity.getHostname())
+                .serviceRoleInstanceId(roleInstanceId)
+                .solveTime(LocalDateTimeUtil.of(Instant.parse(alertMessageEntity.getSolveTime())))
+                .fireTime(LocalDateTimeUtil.of(Instant.parse(alertMessageEntity.getFireTime())))
+                .build();
+        Optional<ServiceInstanceEntity> optionalServiceInstance = serviceInstanceRepository.findById(serviceInstanceId);
+        boolean present = optionalServiceInstance.isPresent();
+        if (present) {
+            ServiceInstanceEntity serviceInstanceEntity = optionalServiceInstance.get();
+            String serviceLabel = serviceInstanceEntity.getLabel();
+            String roleInstanceLabel = roleInstanceRepository.getRoleInstanceLabel(roleInstanceId);
+            historyAlertInfo.setServiceInstanceName(serviceInstanceEntity.getServiceName());
+            historyAlertInfo.setServiceRoleLabel(roleInstanceLabel);
+        }
+        return historyAlertInfo;
+    }
+
+    private Page<AlertMessageEntity> getAlertMessagePageEntities(Integer clusterId, Integer serviceInstanceId, Integer serviceRoleInstanceId, Boolean resolved, Date startTime, Date endTime, Pageable pageable) {
+        return alertMessageRepository.findAll((root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
-            predicates.add(criteriaBuilder.equal(root.get("clusterId"), req.getClusterId()));
-            predicates.add(criteriaBuilder.equal(root.get("resolved"), true));
+            predicates.add(criteriaBuilder.equal(root.get("clusterId"), clusterId));
+            predicates.add(criteriaBuilder.equal(root.get("resolved"), resolved));
             Order order = criteriaBuilder.desc(root.get("updateTime"));
-            if (ObjectUtil.isNotEmpty(req.getHistoryServiceId())) {
-                predicates.add(criteriaBuilder.equal(root.get("serviceInstanceId"), req.getHistoryServiceId()));
+            if (ObjectUtil.isNotEmpty(serviceInstanceId)) {
+                predicates.add(criteriaBuilder.equal(root.get("serviceInstanceId"), serviceInstanceId));
             }
-            if (ObjectUtil.isNotEmpty(req.getHistoryRoleId())) {
-                predicates.add(criteriaBuilder.equal(root.get("serviceRoleInstanceId"), req.getHistoryRoleId()));
+            if (ObjectUtil.isNotEmpty(serviceRoleInstanceId)) {
+                predicates.add(criteriaBuilder.equal(root.get("serviceRoleInstanceId"), serviceRoleInstanceId));
             }
-            if (ObjectUtil.isNotEmpty(req.getStartTime())) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), req.getStartTime()));
+            if (ObjectUtil.isNotEmpty(startTime)) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("createTime"), startTime));
             }
-            if (ObjectUtil.isNotEmpty(req.getEndTime())) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createTime"), req.getEndTime()));
+            if (ObjectUtil.isNotEmpty(endTime)) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("createTime"), endTime));
             }
             Predicate predicate = criteriaBuilder.and(predicates.toArray(new Predicate[0]));
             return criteriaQuery.where(predicate).orderBy(order).getRestriction();
         }, pageable);
-        List<HistoryAlertVO> results = pageResult.get().map(alertMessageEntity -> {
-            Integer serviceInstanceId = alertMessageEntity.getServiceInstanceId();
-            Integer roleInstanceId = alertMessageEntity.getServiceRoleInstanceId();
-
-            Optional<ServiceInstanceEntity> optionalServiceInstance = serviceInstanceRepository.findById(serviceInstanceId);
-            boolean present = optionalServiceInstance.isPresent();
-            if (present) {
-                ServiceInstanceEntity serviceInstanceEntity = optionalServiceInstance.get();
-                String serviceLabel = serviceInstanceEntity.getLabel();
-                String roleInstanceLabel = roleInstanceRepository.getRoleInstanceLabel(roleInstanceId);
-                return HistoryAlertVO.builder()
-                        .alertId(alertMessageEntity.getId())
-                        .alertLevelMsg(alertMessageEntity.getAlertLevel().getDesc())
-                        .alertName(alertMessageEntity.getAlertName())
-                        .createTime(alertMessageEntity.getCreateTime())
-                        .updateTime(alertMessageEntity.getUpdateTime())
-                        .serviceInstanceName(serviceInstanceEntity.getServiceName())
-                        .serviceRoleLabel(roleInstanceLabel)
-                        .serviceInstanceId(serviceInstanceId)
-                        .hostname(alertMessageEntity.getHostname())
-                        .serviceRoleInstanceId(roleInstanceId)
-                        .solveTime(LocalDateTimeUtil.of(Instant.parse(alertMessageEntity.getSolveTime())))
-                        .fireTime(LocalDateTimeUtil.of(Instant.parse(alertMessageEntity.getFireTime())))
-                        .build();
-            } else {
-                return null;
-            }
-
-        }).filter(Objects::nonNull).sorted(Comparator.comparing(HistoryAlertVO::getFireTime).reversed()).collect(Collectors.toList());
-        JsonPage jsonPage = new JsonPage(Long.valueOf(req.getPageNum()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), results);
-        return ResultDTO.success(jsonPage);
     }
 
     /**
@@ -339,52 +344,39 @@ public class AlertController {
     @PostMapping("/pageActiveAlertInfos")
     public ResultDTO<JsonPage<ActiveAlertVO>> pageActiveAlertInfos(@RequestBody ActiveAlertPageReq req) {
         Pageable pageable = PageRequest.of(req.getPageNum() - 1, req.getPageSize());
-        Page<AlertMessageEntity> pageResult = alertMessageRepository.findAll((root, criteriaQuery, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-            predicates.add(criteriaBuilder.equal(root.get("clusterId"), req.getClusterId()));
-            predicates.add(criteriaBuilder.equal(root.get("resolved"), false));
-            Order order = criteriaBuilder.desc(root.get("updateTime"));
-            if (ObjectUtil.isNotEmpty(req.getActiveServiceId())) {
-                predicates.add(criteriaBuilder.equal(root.get("serviceInstanceId"), req.getActiveServiceId()));
-            }
-            if (ObjectUtil.isNotEmpty(req.getActiveRoleId())) {
-                predicates.add(criteriaBuilder.equal(root.get("serviceRoleInstanceId"), req.getActiveRoleId()));
-            }
-            Predicate predicate = criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-            return criteriaQuery.where(predicate).orderBy(order).getRestriction();
-        }, pageable);
+        Page<AlertMessageEntity> pageResult = getAlertMessagePageEntities(req.getClusterId(), req.getActiveServiceId(), req.getActiveRoleId(), Boolean.FALSE, null, null, pageable);
 
-        List<ActiveAlertVO> activeAlertInfos = pageResult.get().map(alertMessageEntity -> {
-            Integer serviceInstanceId = alertMessageEntity.getServiceInstanceId();
-            Integer roleInstanceId = alertMessageEntity.getServiceRoleInstanceId();
-
-            Optional<ServiceInstanceEntity> optionalServiceInstance = serviceInstanceRepository.findById(serviceInstanceId);
-            boolean present = optionalServiceInstance.isPresent();
-            if (present) {
-                ServiceInstanceEntity serviceInstanceEntity = optionalServiceInstance.get();
-                String serviceLabel = serviceInstanceEntity.getLabel();
-                String roleInstanceLabel = roleInstanceRepository.getRoleInstanceLabel(roleInstanceId);
-
-                return ActiveAlertVO.builder()
-                        .alertId(alertMessageEntity.getId())
-                        .advice(alertMessageEntity.getAlertAdvice())
-                        .alertLevelMsg(alertMessageEntity.getAlertLevel().getDesc())
-                        .alertName(alertMessageEntity.getAlertName())
-                        .createTime(alertMessageEntity.getCreateTime())
-                        .info(alertMessageEntity.getAlertInfo())
-                        .serviceInstanceName(serviceInstanceEntity.getServiceName())
-                        .serviceRoleLabel(roleInstanceLabel)
-                        .serviceInstanceId(serviceInstanceId)
-                        .hostname(alertMessageEntity.getHostname())
-                        .serviceRoleInstanceId(roleInstanceId)
-                        .build();
-            } else {
-                return null;
-            }
-
-        }).filter(Objects::nonNull).collect(Collectors.toList());
+        List<ActiveAlertVO> activeAlertInfos = pageResult.get().map(this::buildActiveAlertInfo).collect(Collectors.toList());
         JsonPage jsonPage = new JsonPage(Long.valueOf(req.getPageNum()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), activeAlertInfos);
+
         return ResultDTO.success(jsonPage);
+    }
+
+    private ActiveAlertVO buildActiveAlertInfo(AlertMessageEntity alertMessageEntity) {
+        Integer serviceInstanceId = alertMessageEntity.getServiceInstanceId();
+        Integer roleInstanceId = alertMessageEntity.getServiceRoleInstanceId();
+        ActiveAlertVO activeAlertInfo = ActiveAlertVO.builder()
+                .alertId(alertMessageEntity.getId())
+                .advice(alertMessageEntity.getAlertAdvice())
+                .alertLevelMsg(alertMessageEntity.getAlertLevel().getDesc())
+                .alertName(alertMessageEntity.getAlertName())
+                .createTime(alertMessageEntity.getCreateTime())
+                .info(alertMessageEntity.getAlertInfo())
+                .serviceInstanceId(serviceInstanceId)
+                .hostname(alertMessageEntity.getHostname())
+                .serviceRoleInstanceId(roleInstanceId)
+                .build();
+        Optional<ServiceInstanceEntity> optionalServiceInstance = serviceInstanceRepository.findById(serviceInstanceId);
+        boolean present = optionalServiceInstance.isPresent();
+        if (present) {
+            ServiceInstanceEntity serviceInstanceEntity = optionalServiceInstance.get();
+            String serviceLabel = serviceInstanceEntity.getLabel();
+            String roleInstanceLabel = roleInstanceRepository.getRoleInstanceLabel(roleInstanceId);
+            activeAlertInfo.setServiceInstanceName(serviceInstanceEntity.getServiceName());
+            activeAlertInfo.setServiceRoleLabel(roleInstanceLabel);
+            return activeAlertInfo;
+        }
+        return activeAlertInfo;
     }
 
     /**
@@ -392,8 +384,16 @@ public class AlertController {
      */
     @PostMapping("/pageAlertRuleInfos")
     public ResultDTO<JsonPage<ClusterAlertRuleEntity>> pageAlertRuleInfos(@RequestBody AlertRulePageReq req) {
+        Page<ClusterAlertRuleEntity> pageResult = getClusterAlertRulePageEntities(req);
+
+        JsonPage jsonPage = new JsonPage(Long.valueOf(req.getPageNum()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), pageResult.toList());
+
+        return ResultDTO.success(jsonPage);
+    }
+
+    private Page<ClusterAlertRuleEntity> getClusterAlertRulePageEntities(AlertRulePageReq req) {
         Pageable pageable = PageRequest.of(req.getPageNum() - 1, req.getPageSize());
-        Page<ClusterAlertRuleEntity> pageResult = clusterAlertRuleRepository.findAll((root, criteriaQuery, criteriaBuilder) -> {
+        return clusterAlertRuleRepository.findAll((root, criteriaQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(criteriaBuilder.equal(root.get("clusterId"), req.getClusterId()));
             Order order = criteriaBuilder.desc(root.get("updateTime"));
@@ -409,8 +409,6 @@ public class AlertController {
             Predicate predicate = criteriaBuilder.and(predicates.toArray(new Predicate[0]));
             return criteriaQuery.where(predicate).orderBy(order).getRestriction();
         }, pageable);
-        JsonPage jsonPage = new JsonPage(Long.valueOf(req.getPageNum()), Long.valueOf(req.getPageSize()), pageResult.getTotalElements(), pageResult.toList());
-        return ResultDTO.success(jsonPage);
     }
 
     @PostMapping("saveRule")
