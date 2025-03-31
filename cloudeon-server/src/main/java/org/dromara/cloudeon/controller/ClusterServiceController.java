@@ -19,6 +19,7 @@ package org.dromara.cloudeon.controller;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.lang.Dict;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
@@ -123,8 +124,11 @@ public class ClusterServiceController {
     public ResultDTO<List<String>> checkNeedRestartService(Integer serviceInstanceId) {
         List<String> promptList = new ArrayList<>();
         ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findById(serviceInstanceId).get();
-        if (serviceInstanceEntity.getNeedReloadServiceConfig()) {
+        if (serviceInstanceEntity.getNeedReloadServiceConfig() !=null && serviceInstanceEntity.getNeedReloadServiceConfig()) {
             promptList.add("当前服务正在使用过期的配置：需要更新配置 或 重启服务!");
+        }
+        if(ObjectUtil.isEmpty(serviceInstanceEntity.getNeedRestart())){
+            return ResultDTO.success(promptList);
         }
         if (serviceInstanceEntity.getNeedRestart() && HDFS_STACK_SERVICE_NAME.equals(serviceInstanceEntity.getLabel())) {
             promptList.add("更新" + HDFS_STACK_SERVICE_NAME + "服务的Name Node角色实例数量需要重启服务!");
@@ -448,10 +452,10 @@ public class ClusterServiceController {
         //  调用workflow
         cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, commandId);
         // 刷新配置时更新状态
-        if (serviceInstanceEntity.getNeedReloadServiceConfig()) {
+        if (serviceInstanceEntity.getNeedReloadServiceConfig() != null && serviceInstanceEntity.getNeedReloadServiceConfig()) {
             serviceInstanceEntity.setNeedReloadServiceConfig(Boolean.FALSE);
         }
-        if (serviceInstanceEntity.getNeedReloadMonitorConfig()) {
+        if (serviceInstanceEntity.getNeedReloadMonitorConfig() != null && serviceInstanceEntity.getNeedReloadMonitorConfig()) {
             serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
         }
 
@@ -470,13 +474,13 @@ public class ClusterServiceController {
         // 更新服务实例状态
         serviceInstanceEntity.setServiceState(ServiceState.RESTARTING_SERVICE);
         // 重启时更新状态
-        if (serviceInstanceEntity.getNeedRestart()) {
+        if (serviceInstanceEntity.getNeedRestart() != null && serviceInstanceEntity.getNeedRestart()) {
             serviceInstanceEntity.setNeedRestart(Boolean.FALSE);
         }
-        if (serviceInstanceEntity.getNeedReloadServiceConfig()) {
+        if (serviceInstanceEntity.getNeedReloadServiceConfig() != null && serviceInstanceEntity.getNeedReloadServiceConfig()) {
             serviceInstanceEntity.setNeedReloadServiceConfig(Boolean.FALSE);
         }
-        if (serviceInstanceEntity.getNeedReloadMonitorConfig()) {
+        if (serviceInstanceEntity.getNeedReloadMonitorConfig() != null && serviceInstanceEntity.getNeedReloadMonitorConfig()) {
             serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
         }
         serviceInstanceRepository.save(serviceInstanceEntity);
@@ -497,10 +501,10 @@ public class ClusterServiceController {
         // 更新服务实例状态
         serviceInstanceEntity.setServiceState(ServiceState.STARTING_SERVICE);
         // 停止再启动时 更新状态
-        if (serviceInstanceEntity.getNeedRestart()) {
+        if (serviceInstanceEntity.getNeedRestart() != null && serviceInstanceEntity.getNeedRestart()) {
             serviceInstanceEntity.setNeedRestart(Boolean.FALSE);
         }
-        if (serviceInstanceEntity.getNeedReloadMonitorConfig()) {
+        if (serviceInstanceEntity.getNeedReloadMonitorConfig() != null && serviceInstanceEntity.getNeedReloadMonitorConfig()) {
             serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
             Integer monitorCommandId = commandHandler.buildServiceCommand(serviceInstanceEntities, serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_MONITOR_CONFIG);
             //  调用workflow

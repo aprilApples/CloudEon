@@ -393,7 +393,7 @@ public class ClusterRoleController {
         cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, commandId);
 
         // 更新monitor
-        if (serviceInstanceEntity.getNeedReloadMonitorConfig()) {
+        if (serviceInstanceEntity.getNeedReloadMonitorConfig() != null && serviceInstanceEntity.getNeedReloadMonitorConfig()) {
             serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
             Integer monitorCommandId = commandHandler.buildServiceCommand(Collections.singletonList(serviceInstanceEntity), serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_MONITOR_CONFIG);
             //  调用workflow
