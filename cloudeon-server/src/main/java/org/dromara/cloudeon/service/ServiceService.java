@@ -1,8 +1,9 @@
 package org.dromara.cloudeon.service;
 
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.map.MapUtil;
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.ImmutableMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -12,6 +13,7 @@ import org.dromara.cloudeon.domain.dto.ClusterAlertRuleAndNotifyDTO;
 import org.dromara.cloudeon.dto.NodeInfo;
 import org.dromara.cloudeon.dto.RoleNodeInfo;
 import org.dromara.cloudeon.entity.*;
+import org.dromara.cloudeon.enums.AlertLevel;
 import org.dromara.cloudeon.enums.RoleType;
 import org.dromara.cloudeon.utils.K8sUtil;
 import org.springframework.core.env.Environment;
@@ -20,9 +22,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -148,8 +148,14 @@ public class ServiceService {
         }
         // List<ClusterAlertRuleEntity> clusterAlertRuleEntities = clusterAlertRuleRepository.findByClusterIdAndStackServiceName(clusterId, stackServiceEntity.getName());
         // 增加告警规则通知的配置
-        List<Map<String, String>> clusterAlertRuleAndNotifyInfoMapList = clusterAlertRuleRepository.findClusterAlertRuleAndNotifyInfo(clusterId, stackServiceEntity.getName());
-        List<ClusterAlertRuleAndNotifyDTO> clusterAlertRuleAndNotifyInfos = JSON.parseArray(JSON.toJSONString(clusterAlertRuleAndNotifyInfoMapList), ClusterAlertRuleAndNotifyDTO.class);
+        List<Map<String, Object>> clusterAlertRuleAndNotifyInfoMapList = clusterAlertRuleRepository.findClusterAlertRuleAndNotifyInfo(clusterId, stackServiceEntity.getName());
+        List<ClusterAlertRuleAndNotifyDTO> clusterAlertRuleAndNotifyInfos = new ArrayList<>();
+        for (Map<String, Object> stringStringMap : clusterAlertRuleAndNotifyInfoMapList) {
+            int alertLevel = (int) stringStringMap.get("alertLevel");
+            ClusterAlertRuleAndNotifyDTO clusterAlertRuleAndNotifyInfo = BeanUtil.mapToBean(stringStringMap, ClusterAlertRuleAndNotifyDTO.class, true, CopyOptions.create().setIgnoreProperties("clusterAlertRuleAndNotifyInfo"));
+            clusterAlertRuleAndNotifyInfo.setAlertLevel(Objects.requireNonNull(AlertLevel.getDesc(Integer.valueOf(alertLevel))).getDesc());
+            clusterAlertRuleAndNotifyInfos.add(clusterAlertRuleAndNotifyInfo);
+        }
         dataModel.put("alertRules", clusterAlertRuleAndNotifyInfos);
         // 获取该服务支持的自定义配置文件名
         String customConfigFiles = stackServiceEntity.getCustomConfigFiles();

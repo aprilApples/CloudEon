@@ -30,10 +30,7 @@ import org.dromara.cloudeon.dto.ServiceTaskGroupType;
 import org.dromara.cloudeon.dto.SpecRoleHost;
 import org.dromara.cloudeon.dto.TaskModel;
 import org.dromara.cloudeon.entity.*;
-import org.dromara.cloudeon.enums.CommandState;
-import org.dromara.cloudeon.enums.CommandType;
-import org.dromara.cloudeon.enums.TaskGroupType;
-import org.dromara.cloudeon.enums.TaskType;
+import org.dromara.cloudeon.enums.*;
 import org.dromara.cloudeon.processor.TaskParam;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -218,7 +215,7 @@ public class CommandHandler {
                         TaskGroupType.CONFIG_SERVICE_MONITOR,
                         TaskGroupType.UPDATE_SERVICE_STATE);
             case STOP_SERVICE:
-                return Lists.newArrayList(TaskGroupType.CANCEL_TAG_AND_STOP_K8S_SERVICE,TaskGroupType.UPDATE_SERVICE_STATE);
+                return Lists.newArrayList(TaskGroupType.CANCEL_TAG_AND_STOP_K8S_SERVICE, TaskGroupType.UPDATE_SERVICE_STATE);
             case DELETE_SERVICE:
                 return Lists.newArrayList(TaskGroupType.DELETE_SERVICE_MONITOR, TaskGroupType.CANCEL_TAG_AND_STOP_K8S_SERVICE, TaskGroupType.DELETE_SERVICE, TaskGroupType.DELETE_DB_DATA);
             case UPGRADE_SERVICE_CONFIG:
@@ -227,9 +224,10 @@ public class CommandHandler {
                 return Lists.newArrayList(TaskGroupType.STOP_ROLE);
             case START_ROLE:
                 return Lists.newArrayList(TaskGroupType.START_ROLE);
+            case UPGRADE_MONITOR_CONFIG:
+                return Lists.newArrayList(TaskGroupType.DELETE_SERVICE_MONITOR, TaskGroupType.CONFIG_SERVICE_MONITOR);
             default:
                 return null;
-
         }
 
     }

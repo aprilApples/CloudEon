@@ -40,7 +40,7 @@ public enum CommandType {
     RESTART_SERVICE(8,"重启服务"),
     UPGRADE_SERVICE_CONFIG(9,"刷新服务配置"),
 
-
+    UPGRADE_MONITOR_CONFIG(10,"刷新监控配置"),
 
     ;
 

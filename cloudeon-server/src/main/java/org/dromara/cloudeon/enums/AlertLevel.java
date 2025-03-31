@@ -19,8 +19,8 @@ package org.dromara.cloudeon.enums;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum AlertLevel {
-    WARNING(1,"告警级别"),
-    EXCEPTION(2,"异常级别");
+    WARNING(1, "告警级别"),
+    EXCEPTION(2, "异常级别");
 
     private int value;
 
@@ -42,6 +42,15 @@ public enum AlertLevel {
     public static AlertLevel fromDesc(String desc) {
         for (AlertLevel alertLevel : values()) {
             if (alertLevel.desc.equals(desc)) {
+                return alertLevel;
+            }
+        }
+        return null;
+    }
+
+    public static AlertLevel getDesc(Integer value) {
+        for (AlertLevel alertLevel : values()) {
+            if (alertLevel.value == value) {
                 return alertLevel;
             }
         }

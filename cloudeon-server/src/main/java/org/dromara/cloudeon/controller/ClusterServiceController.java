@@ -71,6 +71,11 @@ import static org.dromara.cloudeon.utils.Constant.VERTX_COMMAND_ADDRESS;
 @Slf4j
 public class ClusterServiceController {
 
+
+    private static final String HDFS_STACK_SERVICE_NAME = "HDFS";
+
+    private static final String YARN_STACK_SERVICE_NAME = "YARN";
+
     @Resource(name = "cloudeonVertx")
     private Vertx cloudeonVertx;
 
@@ -111,6 +116,25 @@ public class ClusterServiceController {
     private ServiceRoleInstanceWebuisRepository roleInstanceWebUisRepository;
 
 
+    /**
+     * 是否需要重启服务或者刷新配置
+     */
+    @GetMapping("/checkNeedRestartService")
+    public ResultDTO<List<String>> checkNeedRestartService(Integer serviceInstanceId) {
+        List<String> promptList = new ArrayList<>();
+        ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findById(serviceInstanceId).get();
+        if (serviceInstanceEntity.getNeedReloadServiceConfig()) {
+            promptList.add("当前服务正在使用过期的配置：需要更新配置 或 重启服务!");
+        }
+        if (serviceInstanceEntity.getNeedRestart() && HDFS_STACK_SERVICE_NAME.equals(serviceInstanceEntity.getLabel())) {
+            promptList.add("更新" + HDFS_STACK_SERVICE_NAME + "服务的Name Node角色实例数量需要重启服务!");
+        }
+        if (serviceInstanceEntity.getNeedRestart() && YARN_STACK_SERVICE_NAME.equals(serviceInstanceEntity.getLabel())) {
+            promptList.add("更新" + YARN_STACK_SERVICE_NAME + "服务的Resource Manager角色实例数量需要重启服务!");
+        }
+        return ResultDTO.success(promptList);
+    }
+
     @PostMapping("/initService")
     public ResultDTO<Void> initService(@RequestBody InitServiceRequest req) {
         Integer clusterId = req.getClusterId();
@@ -140,6 +164,10 @@ public class ClusterServiceController {
             String stackServiceName = K8sUtil.formatK8sNameStr(serviceInfo.getStackServiceName());
             serviceInstanceEntity.setServiceName(stackServiceName);
             serviceInstanceEntity.setLabel(serviceInfo.getStackServiceLabel());
+            // 初始化无需重启和监控
+            serviceInstanceEntity.setNeedRestart(Boolean.FALSE);
+            serviceInstanceEntity.setNeedReloadServiceConfig(Boolean.FALSE);
+            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
             serviceInstanceEntity.setClusterId(clusterId);
             serviceInstanceEntity.setCreateTime(new Date());
             serviceInstanceEntity.setUpdateTime(new Date());
@@ -419,7 +447,13 @@ public class ClusterServiceController {
 
         //  调用workflow
         cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, commandId);
-
+        // 刷新配置时更新状态
+        if (serviceInstanceEntity.getNeedReloadServiceConfig()) {
+            serviceInstanceEntity.setNeedReloadServiceConfig(Boolean.FALSE);
+        }
+        if (serviceInstanceEntity.getNeedReloadMonitorConfig()) {
+            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
+        }
 
         return ResultDTO.success(null);
     }
@@ -435,6 +469,16 @@ public class ClusterServiceController {
         cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, commandId);
         // 更新服务实例状态
         serviceInstanceEntity.setServiceState(ServiceState.RESTARTING_SERVICE);
+        // 重启时更新状态
+        if (serviceInstanceEntity.getNeedRestart()) {
+            serviceInstanceEntity.setNeedRestart(Boolean.FALSE);
+        }
+        if (serviceInstanceEntity.getNeedReloadServiceConfig()) {
+            serviceInstanceEntity.setNeedReloadServiceConfig(Boolean.FALSE);
+        }
+        if (serviceInstanceEntity.getNeedReloadMonitorConfig()) {
+            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
+        }
         serviceInstanceRepository.save(serviceInstanceEntity);
 
         return ResultDTO.success(null);
@@ -452,6 +496,16 @@ public class ClusterServiceController {
 
         // 更新服务实例状态
         serviceInstanceEntity.setServiceState(ServiceState.STARTING_SERVICE);
+        // 停止再启动时 更新状态
+        if (serviceInstanceEntity.getNeedRestart()) {
+            serviceInstanceEntity.setNeedRestart(Boolean.FALSE);
+        }
+        if (serviceInstanceEntity.getNeedReloadMonitorConfig()) {
+            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
+            Integer monitorCommandId = commandHandler.buildServiceCommand(serviceInstanceEntities, serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_MONITOR_CONFIG);
+            //  调用workflow
+            cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, monitorCommandId);
+        }
         serviceInstanceRepository.save(serviceInstanceEntity);
 
         return ResultDTO.success(null);
@@ -671,6 +725,8 @@ public class ClusterServiceController {
     ResultDTO<Boolean> serviceInstanceSaveConf(@RequestBody ServiceConfUpgradeRequest serviceConfUpgradeRequest) {
         Integer serviceInstanceId = serviceConfUpgradeRequest.getServiceInstanceId();
         ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findById(serviceInstanceId).get();
+        serviceInstanceEntity.setNeedReloadServiceConfig(Boolean.TRUE);
+        serviceInstanceRepository.save(serviceInstanceEntity);
         Integer stackServiceId = serviceInstanceEntity.getStackServiceId();
         Integer stackId = stackServiceRepository.findById(stackServiceId).get().getStackId();
         List<ServiceInstanceConfigEntity> serviceInstanceConfigEntities = new ArrayList<>();

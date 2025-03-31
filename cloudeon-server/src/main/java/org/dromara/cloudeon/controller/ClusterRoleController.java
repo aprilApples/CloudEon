@@ -99,6 +99,8 @@ public class ClusterRoleController {
     @Resource
     private ServiceRoleInstanceWebuisRepository roleInstanceWebUisRepository;
 
+    @Resource
+    private ClusterAlertRuleRepository clusterAlertRuleRepository;
 
     /**
      * 获取当前服务左侧可添加的角色列表
@@ -255,7 +257,7 @@ public class ClusterRoleController {
             updateServiceRoleInstance(req, serviceInstanceEntity, stackServiceId);
         }
         // 更新状态
-        serviceInstanceEntity.setNeedMonitor(Boolean.TRUE);
+        serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.TRUE);
         serviceInstanceRepository.save(serviceInstanceEntity);
         return ResultDTO.success(null);
     }
@@ -365,14 +367,16 @@ public class ClusterRoleController {
             serviceInstanceEntity.setNeedRestart(Boolean.TRUE);
         }
         // 更新monitor
-
+        serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
+        Integer monitorCommandId = commandHandler.buildServiceCommand(Collections.singletonList(serviceInstanceEntity), serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_MONITOR_CONFIG);
+        //  调用workflow
+        cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, monitorCommandId);
         return ResultDTO.success(null);
     }
 
 
     @PostMapping("/startRole")
     public ResultDTO<Void> startRole(Integer roleInstanceId) {
-
         ServiceRoleInstanceEntity roleInstanceEntity = roleInstanceRepository.findById(roleInstanceId).get();
         ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findById(roleInstanceEntity.getServiceInstanceId()).get();
         if (roleInstanceEntity.getServiceRoleState() != ServiceRoleState.ROLE_STOPPED) {
@@ -388,6 +392,13 @@ public class ClusterRoleController {
         //  调用workflow
         cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, commandId);
 
+        // 更新monitor
+        if (serviceInstanceEntity.getNeedReloadMonitorConfig()) {
+            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
+            Integer monitorCommandId = commandHandler.buildServiceCommand(Collections.singletonList(serviceInstanceEntity), serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_MONITOR_CONFIG);
+            //  调用workflow
+            cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, monitorCommandId);
+        }
         return ResultDTO.success(null);
     }
 

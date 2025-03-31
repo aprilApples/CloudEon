@@ -34,7 +34,7 @@ public class ClusterAlertRuleAndNotifyDTO implements Serializable {
 
     private String ruleName;
 
-    private Integer alertLevel;
+    private String alertLevel;
 
     private String promql;
 

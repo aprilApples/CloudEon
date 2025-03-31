@@ -34,7 +34,7 @@ public interface ClusterAlertRuleRepository extends JpaRepository<ClusterAlertRu
 
     @Query(value = "select rule.id,rule.cluster_id as clusterId,rule.rule_name as ruleName,rule.alert_level as alertLevel,rule.promql ,rule.stack_service_name as stackServiceName,rule.stack_role_name as stackRoleName,rule.wait_for_fire_duration as waitForFireDuration ,rule.alert_info as alertInfo,rule.alert_advice as alertAdvice, notify.alert_notify_name as alertNotifyName, notify.notify_type as notifyType,notify.recipients,notify.enable_status as enableStatus,notify.desp from ce_alert_rule_define rule left join gh_alert_notify_rule_relation relation on rule.id = relation.alert_rule_id left join gh_alert_notify_info notify on notify.id = relation.alert_notify_id" +
             " where rule.cluster_id = :clusterId and rule.stack_service_name = :stackServiceName", nativeQuery = true)
-    List<Map<String, String>> findClusterAlertRuleAndNotifyInfo(@Param("clusterId") Integer clusterId, @Param("stackServiceName") String stackServiceName);
+    List<Map<String, Object>> findClusterAlertRuleAndNotifyInfo(@Param("clusterId") Integer clusterId, @Param("stackServiceName") String stackServiceName);
 
     @Query(value = "select rule.id, rule.stack_service_name as stackServiceName, relation.alert_notify_id as alertNotifyId from ce_alert_rule_define rule left join gh_alert_notify_rule_relation relation on rule.id = relation.alert_rule_id" +
             " where relation.alert_notify_id in ?1 ", nativeQuery = true)

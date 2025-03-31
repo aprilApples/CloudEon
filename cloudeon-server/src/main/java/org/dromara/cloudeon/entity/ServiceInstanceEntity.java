@@ -47,9 +47,6 @@ public class ServiceInstanceEntity implements Serializable {
     @GenericGenerator(name = "native", strategy = "native")
     private Integer id;
 
-
-
-
     /**
      * 集群id
      */
@@ -71,10 +68,22 @@ public class ServiceInstanceEntity implements Serializable {
      * 是否需要重启
      */
     private Boolean needRestart;
+
+    /**
+     * 是否需要更新服务配置
+     */
+    private Boolean needReloadServiceConfig;
+
+    /**
+     * 是否需要更新监控配置
+     */
+    private Boolean needReloadMonitorConfig;
+
     /**
      * 更新时间
      */
     private Date updateTime;
+
     /**
      * 创建时间
      */
@@ -84,6 +93,7 @@ public class ServiceInstanceEntity implements Serializable {
      * 该服务实例所依赖的服务实例id
      */
     private String dependenceServiceInstanceIds;
+
     /**
      * 框架服务id
      */
