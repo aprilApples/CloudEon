@@ -22,6 +22,7 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: none
+#    show-sql: true
   flyway:
     enabled: true
     clean-disabled: true
