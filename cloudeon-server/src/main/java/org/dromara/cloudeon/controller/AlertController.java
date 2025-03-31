@@ -398,7 +398,7 @@ public class AlertController {
             predicates.add(criteriaBuilder.equal(root.get("clusterId"), req.getClusterId()));
             Order order = criteriaBuilder.desc(root.get("updateTime"));
             if (ObjectUtil.isNotEmpty(req.getRuleName())) {
-                predicates.add(criteriaBuilder.equal(root.get("stackRoleName"), "%" + req.getRuleName() + "%"));
+                predicates.add(criteriaBuilder.like(root.get("ruleName"), "%" + req.getRuleName() + "%"));
             }
             if (ObjectUtil.isNotEmpty(req.getRuleStackServiceName())) {
                 predicates.add(criteriaBuilder.equal(root.get("stackServiceName"), req.getRuleStackServiceName()));

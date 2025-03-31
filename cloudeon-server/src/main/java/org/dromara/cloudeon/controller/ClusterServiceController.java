@@ -27,14 +27,15 @@ import freemarker.cache.StringTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import io.fabric8.kubernetes.api.model.EventList;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.vertx.core.Vertx;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dromara.cloudeon.controller.request.InitServiceRequest;
 import org.dromara.cloudeon.controller.request.ServiceConfUpgradeRequest;
-import org.dromara.cloudeon.controller.response.*;
+import org.dromara.cloudeon.controller.response.ServiceInstanceConfVO;
+import org.dromara.cloudeon.controller.response.ServiceInstanceDetailVO;
+import org.dromara.cloudeon.controller.response.ServiceInstanceVO;
+import org.dromara.cloudeon.controller.response.ServiceInstanceWebUrlVO;
 import org.dromara.cloudeon.dao.*;
 import org.dromara.cloudeon.dto.ResultDTO;
 import org.dromara.cloudeon.dto.ServiceConfiguration;
@@ -43,7 +44,6 @@ import org.dromara.cloudeon.dto.ServicePresetConf;
 import org.dromara.cloudeon.entity.*;
 import org.dromara.cloudeon.enums.*;
 import org.dromara.cloudeon.service.CommandHandler;
-import org.dromara.cloudeon.service.KubeService;
 import org.dromara.cloudeon.service.ServiceService;
 import org.dromara.cloudeon.utils.Constant;
 import org.dromara.cloudeon.utils.DAG;
@@ -71,12 +71,23 @@ import static org.dromara.cloudeon.utils.Constant.VERTX_COMMAND_ADDRESS;
 @Slf4j
 public class ClusterServiceController {
 
+    @Resource(name = "cloudeonVertx")
+    private Vertx cloudeonVertx;
+
     @Resource
     private ServiceService serviceService;
 
+    @Resource
+    private CommandHandler commandHandler;
 
-    @Resource(name = "cloudeonVertx")
-    private Vertx cloudeonVertx;
+    @Resource
+    private CommandRepository commandRepository;
+
+    @Resource
+    private ClusterNodeRepository clusterNodeRepository;
+
+    @Resource
+    private StackServiceRepository stackServiceRepository;
 
     @Resource
     private AlertMessageRepository alertMessageRepository;
@@ -91,35 +102,14 @@ public class ClusterServiceController {
     private StackServiceRoleRepository stackServiceRoleRepository;
 
     @Resource
-    private StackServiceRepository stackServiceRepository;
-
-    @Resource
-    private ServiceRoleInstanceWebuisRepository roleInstanceWebuisRepository;
+    private StackServiceConfRepository stackServiceConfRepository;
 
     @Resource
     private ServiceInstanceConfigRepository serviceInstanceConfigRepository;
 
     @Resource
-    private CommandRepository commandRepository;
+    private ServiceRoleInstanceWebuisRepository roleInstanceWebUisRepository;
 
-
-    @Resource
-    private CommandHandler commandHandler;
-
-    @Resource
-    private ClusterNodeRepository clusterNodeRepository;
-
-    @Resource
-    private StackServiceConfRepository stackServiceConfRepository;
-
-    @Resource
-    private ServiceInstanceSeqRepository serviceInstanceSeqRepository;
-
-    @Resource
-    private ClusterInfoRepository clusterInfoRepository;
-
-    @Resource
-    private KubeService kubeService;
 
     @PostMapping("/initService")
     public ResultDTO<Void> initService(@RequestBody InitServiceRequest req) {
@@ -221,7 +211,7 @@ public class ClusterServiceController {
                         }).collect(Collectors.toList());
 
                 // 批量持久化role web ui
-                roleInstanceWebuisRepository.saveAll(roleInstanceWebuisEntities);
+                roleInstanceWebUisRepository.saveAll(roleInstanceWebuisEntities);
 
 
             }
@@ -467,50 +457,6 @@ public class ClusterServiceController {
         return ResultDTO.success(null);
     }
 
-
-    @PostMapping("/stopRole")
-    public ResultDTO<Void> stopRoles(Integer roleInstanceId) {
-
-        ServiceRoleInstanceEntity roleInstanceEntity = roleInstanceRepository.findById(roleInstanceId).get();
-        ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findById(roleInstanceEntity.getServiceInstanceId()).get();
-        if (roleInstanceEntity.getServiceRoleState() != ServiceRoleState.ROLE_STARTED) {
-            throw new RuntimeException("角色未启动,无法执行停止!");
-        }
-        // 更新角色实例状态
-        roleInstanceEntity.setServiceRoleState(ServiceRoleState.STOPPING_ROLE);
-        roleInstanceRepository.save(roleInstanceEntity);
-
-        //  生成停止角色command
-        List<ServiceInstanceEntity> serviceInstanceEntities = Lists.newArrayList(serviceInstanceEntity);
-        Integer commandId = commandHandler.buildRoleCommand(serviceInstanceEntities, Lists.newArrayList(roleInstanceEntity),
-                serviceInstanceEntity.getClusterId(), CommandType.STOP_ROLE);
-        //  调用workflow
-        cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, commandId);
-
-        return ResultDTO.success(null);
-    }
-
-    @PostMapping("/startRole")
-    public ResultDTO<Void> startRole(Integer roleInstanceId) {
-
-        ServiceRoleInstanceEntity roleInstanceEntity = roleInstanceRepository.findById(roleInstanceId).get();
-        ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findById(roleInstanceEntity.getServiceInstanceId()).get();
-        if (roleInstanceEntity.getServiceRoleState() != ServiceRoleState.ROLE_STOPPED) {
-            throw new RuntimeException("角色未停止,无法执行启动!");
-        }
-        // 更新角色实例状态
-        roleInstanceEntity.setServiceRoleState(ServiceRoleState.STARTING_ROLE);
-        roleInstanceRepository.save(roleInstanceEntity);
-        //  生成启动角色command
-        List<ServiceInstanceEntity> serviceInstanceEntities = Lists.newArrayList(serviceInstanceEntity);
-        Integer commandId = commandHandler.buildRoleCommand(serviceInstanceEntities, Lists.newArrayList(roleInstanceEntity),
-                serviceInstanceEntity.getClusterId(), CommandType.START_ROLE);
-        //  调用workflow
-        cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, commandId);
-
-        return ResultDTO.success(null);
-    }
-
     /**
      * 校验要安装的服务是否需要Kerberos配置
      */
@@ -591,7 +537,7 @@ public class ClusterServiceController {
         List<String> allTags = serviceConfigurations.stream().map(e -> e.getTag()).distinct().collect(Collectors.toList());
         treeMap.put("全部", allTags);
         // fileGroup tags
-        Map<String, List<ServiceConfiguration>> collect = serviceConfigurations.stream().filter(e->StrUtil.isNotBlank(e.getConfFile())).collect(Collectors.groupingBy(ServiceConfiguration::getConfFile));
+        Map<String, List<ServiceConfiguration>> collect = serviceConfigurations.stream().filter(e -> StrUtil.isNotBlank(e.getConfFile())).collect(Collectors.groupingBy(ServiceConfiguration::getConfFile));
         Map<String, List<String>> fileGroup = collect.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey, // key使用原始key
@@ -632,44 +578,6 @@ public class ClusterServiceController {
         return ResultDTO.success(instanceDetailVO);
     }
 
-    /**
-     * 服务实例角色列表
-     */
-    @GetMapping("/serviceInstanceRoles")
-    public ResultDTO<List<ServiceInstanceRoleVO>> serviceInstanceRoles(Integer serviceInstanceId) {
-
-        List<ServiceInstanceRoleVO> result = roleInstanceRepository.findByServiceInstanceId(serviceInstanceId).stream().map(new Function<ServiceRoleInstanceEntity, ServiceInstanceRoleVO>() {
-            @Override
-            public ServiceInstanceRoleVO apply(ServiceRoleInstanceEntity roleInstanceEntity) {
-                ClusterNodeEntity nodeEntity = clusterNodeRepository.findById(roleInstanceEntity.getNodeId()).get();
-                // 查找该角色实例绑定的web地址
-                ServiceRoleInstanceWebuisEntity webuisEntity = roleInstanceWebuisRepository.findByServiceRoleInstanceId(roleInstanceEntity.getId());
-                StackServiceRoleEntity stackServiceRoleEntity = stackServiceRoleRepository.findById(roleInstanceEntity.getStackServiceRoleId()).get();
-                ServiceRoleState serviceRoleState = roleInstanceEntity.getServiceRoleState();
-                // 查询角色实例相关告警
-                List<String> alertNames = alertMessageRepository.findByServiceRoleInstanceIdAndResolved(roleInstanceEntity.getId(), false)
-                        .stream().map(AlertMessageEntity::getAlertName).collect(Collectors.toList());
-                ServiceInstanceRoleVO serviceInstanceRoleVO = ServiceInstanceRoleVO.builder()
-                        .roleStatus(serviceRoleState.getDesc())
-                        .roleStatusValue(serviceRoleState.getValue())
-                        .id(roleInstanceEntity.getId())
-                        .nodeHostIp(nodeEntity.getIp())
-                        .nodeHostname(nodeEntity.getHostname())
-                        .alertMsgCnt(alertNames.size())
-                        .alertMsgName(alertNames)
-                        .nodeId(nodeEntity.getId())
-                        // 用 stackServiceRoleEntity label更清晰 （如：Doris Be）
-                        .name(stackServiceRoleEntity.getLabel())
-                        .build();
-                if (webuisEntity != null) {
-                    serviceInstanceRoleVO.setUiUrls(Lists.newArrayList(webuisEntity.getWebHostUrl(), webuisEntity.getWebIpUrl()));
-                }
-                return serviceInstanceRoleVO;
-            }
-        }).collect(Collectors.toList());
-
-        return ResultDTO.success(result);
-    }
 
     /**
      * 删除服务实例
@@ -681,17 +589,17 @@ public class ClusterServiceController {
         ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findById(serviceInstanceId).get();
         // 查出有依赖此服务的服务实例
         List<ServiceInstanceEntity> dep = serviceInstanceRepository.findByClusterIdAndDependenceServiceInstanceIdsNotNull(serviceInstanceEntity.getClusterId());
-//        List<ServiceInstanceEntity> depServiceInstanceList = dep.stream().filter(new Predicate<ServiceInstanceEntity>() {
-//            @Override
-//            public boolean test(ServiceInstanceEntity serviceInstanceEntity) {
-//                List<String> ids = Arrays.stream(serviceInstanceEntity.getDependenceServiceInstanceIds().split(",")).collect(Collectors.toList());
-//                return ids.contains(serviceInstanceId.toString());
-//            }
-//        }).collect(Collectors.toList());
-//        if (depServiceInstanceList.size() > 0) {
-//            String depServiceNames = depServiceInstanceList.stream().map(ServiceInstanceEntity::getServiceName).collect(Collectors.joining(","));
-//            return ResultDTO.failed("请先删除依赖此服务的服务实例：" + depServiceNames);
-//        }
+        List<ServiceInstanceEntity> depServiceInstanceList = dep.stream().filter(new Predicate<ServiceInstanceEntity>() {
+            @Override
+            public boolean test(ServiceInstanceEntity serviceInstanceEntity) {
+                List<String> ids = Arrays.stream(serviceInstanceEntity.getDependenceServiceInstanceIds().split(",")).collect(Collectors.toList());
+                return ids.contains(serviceInstanceId.toString());
+            }
+        }).collect(Collectors.toList());
+        if (depServiceInstanceList.size() > 0) {
+            String depServiceNames = depServiceInstanceList.stream().map(ServiceInstanceEntity::getServiceName).collect(Collectors.joining(","));
+            return ResultDTO.failed("请先删除依赖此服务的服务实例：" + depServiceNames);
+        }
 
         //  生成删除服务command
         List<ServiceInstanceEntity> serviceInstanceEntities = Lists.newArrayList(serviceInstanceEntity);
@@ -783,7 +691,7 @@ public class ClusterServiceController {
             public ServiceInstanceWebUrlVO apply(ServiceRoleInstanceEntity roleInstanceEntity) {
                 ClusterNodeEntity nodeEntity = clusterNodeRepository.findById(roleInstanceEntity.getNodeId()).get();
                 // 查找该角色实例绑定的web地址
-                ServiceRoleInstanceWebuisEntity webuisEntity = roleInstanceWebuisRepository.findByServiceRoleInstanceId(roleInstanceEntity.getId());
+                ServiceRoleInstanceWebuisEntity webuisEntity = roleInstanceWebUisRepository.findByServiceRoleInstanceId(roleInstanceEntity.getId());
                 if (webuisEntity != null) {
                     StackServiceRoleEntity stackServiceRoleEntity = stackServiceRoleRepository.findById(roleInstanceEntity.getStackServiceRoleId()).get();
                     return ServiceInstanceWebUrlVO.builder()
@@ -804,41 +712,6 @@ public class ClusterServiceController {
         return ResultDTO.success(result);
     }
 
-
-    @GetMapping("/rolePodEvents")
-    public ResultDTO<List<RolePodEventVO>> rolePodEvents(Integer roleId,Integer clusterId) {
-        ServiceRoleInstanceEntity roleInstanceEntity = roleInstanceRepository.findById(roleId).get();
-        StackServiceRoleEntity stackServiceRoleEntity = stackServiceRoleRepository.findById(roleInstanceEntity.getStackServiceRoleId()).get();
-        Integer nodeId = roleInstanceEntity.getNodeId();
-        String hostIp = clusterNodeRepository.findById(nodeId).get().getIp();
-        String namespace = clusterInfoRepository.findById(clusterId).get().getNamespace();
-        ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findById(roleInstanceEntity.getServiceInstanceId()).get();
-        return kubeService.executeWithKubeClient(clusterId, client -> {
-            String roleServiceFullName = stackServiceRoleEntity.getRoleFullName() + "-" + serviceInstanceEntity.getServiceName().toLowerCase();
-
-            // 带有标签的pod
-            List<Pod> podList = client.pods().inNamespace(namespace).withLabel("app", roleServiceFullName).list().getItems();
-            // 指定节点的pod
-            Pod pod = podList.stream().filter(pod1 -> pod1.getStatus().getHostIP().equals(hostIp)).findFirst().get();
-            
-            EventList eventList = client.v1().events()
-                    .inNamespace(namespace)
-                    .withField("involvedObject.name", pod.getMetadata().getName())
-                    .list();
-
-            List<RolePodEventVO> rolePodEventVOS = eventList.getItems().stream().map(event -> {
-                RolePodEventVO eventVO = RolePodEventVO.builder()
-                        .type(event.getType())
-                        .message(event.getMessage())
-                        .reason(event.getReason())
-                        .count(event.getCount())
-                        .lastTimestamp(K8sUtil.formatK8sDateStr(event.getLastTimestamp()))
-                        .build();
-                return eventVO;
-            }).collect(Collectors.toList());
-            return ResultDTO.success(rolePodEventVOS);
-        });
-    }
 
     @PostMapping("/stopCommand")
     public ResultDTO<Void> stopCommand(Integer commandId) {
