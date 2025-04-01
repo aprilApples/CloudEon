@@ -243,28 +243,33 @@ public class ClusterRoleController {
             if (stackServiceRole == null) {
                 throw new RuntimeException("找不到服务角色: " + stackRoleName);
             }
-            // 检查是否包含hdfs的nameNode
-            if (HDFS_STACK_SERVICE_NAME.equals(serviceInstanceEntity.getLabel()) && HDFS_ROLE_NAME_NODE.equals(stackRoleName)) {
-                List<StackServiceRoleEntity> stackServiceRoleInfos = stackServiceRoleRepository.findByServiceIdAndStackId(serviceInstanceId, stackServiceId);
-                if (stackServiceRoleInfos.size() > 1) {
-                    throw new RuntimeException(HDFS_STACK_SERVICE_NAME + "服务只能包含2个" + HDFS_ROLE_NAME_NODE + "角色实例！");
-                } else {
-                    serviceInstanceEntity.setNeedRestart(Boolean.TRUE);
-                }
-            }
-            // 检查是否包含yarn的resourceManager
-            if (YARN_STACK_SERVICE_NAME.equals(serviceInstanceEntity.getLabel()) && YARN_ROLE_RESOURCEMANAGER.equals(stackRoleName)) {
-                serviceInstanceEntity.setNeedRestart(Boolean.TRUE);
-            }
-            updateServiceRoleInstance(role, serviceInstanceEntity, stackServiceRole);
+            ServiceInstanceEntity ServiceInstanceEntity = preProcessAddServiceRoleInstance(serviceInstanceEntity, stackRoleName, serviceInstanceId, stackServiceId);
+            // 添加角色实例
+            addServiceRoleInstance(role, ServiceInstanceEntity, stackServiceRole);
         }
-        // 更新状态
-        serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.TRUE);
-        serviceInstanceRepository.save(serviceInstanceEntity);
         return ResultDTO.success(null);
     }
 
-    private void updateServiceRoleInstance(AddServiceRoleReq.UpdateServiceRole role, ServiceInstanceEntity serviceInstanceEntity, StackServiceRoleEntity stackServiceRole) {
+    private ServiceInstanceEntity preProcessAddServiceRoleInstance(ServiceInstanceEntity serviceInstanceEntity, String stackRoleName, Integer serviceInstanceId, Integer stackServiceId) {
+        // 检查是否包含hdfs的nameNode
+        if (HDFS_STACK_SERVICE_NAME.equals(serviceInstanceEntity.getLabel()) && HDFS_ROLE_NAME_NODE.equals(stackRoleName)) {
+            List<StackServiceRoleEntity> stackServiceRoleInfos = stackServiceRoleRepository.findByServiceIdAndStackId(serviceInstanceId, stackServiceId);
+            if (stackServiceRoleInfos.size() > 1) {
+                throw new RuntimeException(HDFS_STACK_SERVICE_NAME + "服务只能包含2个" + HDFS_ROLE_NAME_NODE + "角色实例！");
+            } else {
+                serviceInstanceEntity.setNeedRestart(Boolean.TRUE);
+                serviceInstanceRepository.save(serviceInstanceEntity);
+            }
+        }
+        // 检查是否包含yarn的resourceManager
+        if (YARN_STACK_SERVICE_NAME.equals(serviceInstanceEntity.getLabel()) && YARN_ROLE_RESOURCEMANAGER.equals(stackRoleName)) {
+            serviceInstanceEntity.setNeedRestart(Boolean.TRUE);
+            serviceInstanceRepository.save(serviceInstanceEntity);
+        }
+        return serviceInstanceEntity;
+    }
+
+    private void addServiceRoleInstance(AddServiceRoleReq.UpdateServiceRole role, ServiceInstanceEntity serviceInstanceEntity, StackServiceRoleEntity stackServiceRole) {
         List<ServiceRoleInstanceEntity> newInstances = role.getNodeIds().stream()
                 .map(nodeId -> createRoleInstance(serviceInstanceEntity, stackServiceRole, nodeId))
                 .collect(Collectors.toList());
@@ -284,6 +289,8 @@ public class ClusterRoleController {
         entity.setStackServiceRoleId(role.getId());
         entity.setServiceRoleName(role.getName());
         entity.setServiceRoleState(ServiceRoleState.ROLE_STOPPED);
+        // 更新状态
+        entity.setNeedReloadMonitorConfig(Boolean.TRUE);
         entity.setNodeId(nodeId);
         entity.setCreateTime(new Date());
         entity.setUpdateTime(new Date());
@@ -339,6 +346,17 @@ public class ClusterRoleController {
         if (roleInstanceInfo.getServiceRoleState() != ServiceRoleState.ROLE_STOPPED) {
             throw new RuntimeException("角色未停止,无法执行删除!");
         }
+        ServiceInstanceEntity serviceInstanceEntity = preProcessDeleteServiceRole(roleInstanceId, roleInstanceInfo);
+        // 删除角色相关
+        roleInstanceRepository.deleteById(roleInstanceId);
+        roleInstanceWebUisRepository.deleteByServiceRoleInstanceId(roleInstanceId);
+
+        // 更新monitor
+        notifyK8sMonitorService(roleInstanceInfo, serviceInstanceEntity);
+        return ResultDTO.success(null);
+    }
+
+    private ServiceInstanceEntity preProcessDeleteServiceRole(Integer roleInstanceId, ServiceRoleInstanceEntity roleInstanceInfo) {
         ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findById(roleInstanceInfo.getServiceInstanceId()).get();
         List<ServiceRoleInstanceEntity> allRoleInstanceInfos = roleInstanceRepository.findByServiceInstanceId(serviceInstanceEntity.getId());
         // 检查是否包含hdfs的nameNode
@@ -349,6 +367,8 @@ public class ClusterRoleController {
             if (0 == liveNameNodeSize) {
                 throw new RuntimeException(HDFS_STACK_SERVICE_NAME + "服务至少应有1个" + HDFS_ROLE_NAME_NODE + "角色实例！");
             }
+            serviceInstanceEntity.setNeedRestart(Boolean.TRUE);
+            serviceInstanceRepository.save(serviceInstanceEntity);
         }
         // 检查是否包含yarn的resourceManager
         if (YARN_STACK_SERVICE_NAME.equals(serviceInstanceEntity.getLabel()) && YARN_ROLE_RESOURCEMANAGER.equals(roleInstanceInfo.getServiceRoleName())) {
@@ -359,22 +379,19 @@ public class ClusterRoleController {
                 throw new RuntimeException(YARN_STACK_SERVICE_NAME + "服务至少应有1个" + YARN_ROLE_RESOURCEMANAGER + "角色实例！");
             }
             serviceInstanceEntity.setNeedRestart(Boolean.TRUE);
+            serviceInstanceRepository.save(serviceInstanceEntity);
         }
-        // 删除角色相关
-        roleInstanceRepository.deleteById(roleInstanceId);
-        roleInstanceWebUisRepository.deleteByServiceRoleInstanceId(roleInstanceId);
-
-        // 更新monitor
-        if (serviceInstanceEntity.getNeedReloadMonitorConfig() != null && !serviceInstanceEntity.getNeedReloadMonitorConfig()) {
-            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
-            Integer monitorCommandId = commandHandler.buildServiceCommand(Collections.singletonList(serviceInstanceEntity), serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_MONITOR_CONFIG);
-            // 调用workflow
-            cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, monitorCommandId);
-        }
-        serviceInstanceRepository.save(serviceInstanceEntity);
-        return ResultDTO.success(null);
+        return serviceInstanceEntity;
     }
 
+    private void notifyK8sMonitorService(ServiceRoleInstanceEntity roleInstanceInfo, ServiceInstanceEntity serviceInstanceEntity) {
+        if (roleInstanceInfo.getNeedReloadMonitorConfig() != null && roleInstanceInfo.getNeedReloadMonitorConfig()) {
+            return;
+        }
+        Integer monitorCommandId = commandHandler.buildServiceCommand(Collections.singletonList(serviceInstanceEntity), serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_MONITOR_CONFIG);
+        // 调用workflow
+        cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, monitorCommandId);
+    }
 
     @PostMapping("/startRole")
     public ResultDTO<Void> startRole(Integer roleInstanceId) {
@@ -394,8 +411,9 @@ public class ClusterRoleController {
         cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, commandId);
 
         // 更新monitor
-        if (serviceInstanceEntity.getNeedReloadMonitorConfig() != null && serviceInstanceEntity.getNeedReloadMonitorConfig()) {
-            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
+        if (roleInstanceEntity.getNeedReloadMonitorConfig() != null && roleInstanceEntity.getNeedReloadMonitorConfig()) {
+            roleInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
+            roleInstanceRepository.save(roleInstanceEntity);
             Integer monitorCommandId = commandHandler.buildServiceCommand(Collections.singletonList(serviceInstanceEntity), serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_MONITOR_CONFIG);
             //  调用workflow
             cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, monitorCommandId);

@@ -75,11 +75,6 @@ public class ServiceInstanceEntity implements Serializable {
     private Boolean needReloadServiceConfig;
 
     /**
-     * 是否需要更新监控配置
-     */
-    private Boolean needReloadMonitorConfig;
-
-    /**
      * 更新时间
      */
     private Date updateTime;

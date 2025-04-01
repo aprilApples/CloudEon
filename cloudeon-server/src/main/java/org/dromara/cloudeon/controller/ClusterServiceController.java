@@ -17,6 +17,7 @@
 package org.dromara.cloudeon.controller;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.lang.Dict;
 import cn.hutool.core.util.ObjectUtil;
@@ -124,10 +125,10 @@ public class ClusterServiceController {
     public ResultDTO<List<String>> checkNeedRestartService(Integer serviceInstanceId) {
         List<String> promptList = new ArrayList<>();
         ServiceInstanceEntity serviceInstanceEntity = serviceInstanceRepository.findById(serviceInstanceId).get();
-        if (serviceInstanceEntity.getNeedReloadServiceConfig() !=null && serviceInstanceEntity.getNeedReloadServiceConfig()) {
+        if (serviceInstanceEntity.getNeedReloadServiceConfig() != null && serviceInstanceEntity.getNeedReloadServiceConfig()) {
             promptList.add("当前服务正在使用过期的配置：需要更新配置 或 重启服务!");
         }
-        if(ObjectUtil.isEmpty(serviceInstanceEntity.getNeedRestart())){
+        if (ObjectUtil.isEmpty(serviceInstanceEntity.getNeedRestart())) {
             return ResultDTO.success(promptList);
         }
         if (serviceInstanceEntity.getNeedRestart() && HDFS_STACK_SERVICE_NAME.equals(serviceInstanceEntity.getLabel())) {
@@ -171,7 +172,6 @@ public class ClusterServiceController {
             // 初始化无需重启和监控
             serviceInstanceEntity.setNeedRestart(Boolean.FALSE);
             serviceInstanceEntity.setNeedReloadServiceConfig(Boolean.FALSE);
-            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
             serviceInstanceEntity.setClusterId(clusterId);
             serviceInstanceEntity.setCreateTime(new Date());
             serviceInstanceEntity.setUpdateTime(new Date());
@@ -214,6 +214,7 @@ public class ClusterServiceController {
                         roleInstanceEntity.setServiceInstanceId(serviceInstanceEntityId);
                         roleInstanceEntity.setStackServiceRoleId(stackServiceRoleEntity.getId());
                         roleInstanceEntity.setServiceRoleName(stackRoleName);
+                        roleInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
                         roleInstanceEntity.setServiceRoleState(ServiceRoleState.INIT_ROLE);
                         roleInstanceEntity.setNodeId(nodeId);
                         return roleInstanceEntity;
@@ -438,7 +439,6 @@ public class ClusterServiceController {
         serviceInstanceEntity.setServiceState(ServiceState.STOPPING_SERVICE);
         serviceInstanceRepository.save(serviceInstanceEntity);
 
-
         return ResultDTO.success(null);
     }
 
@@ -454,11 +454,15 @@ public class ClusterServiceController {
         // 刷新配置时更新状态
         if (serviceInstanceEntity.getNeedReloadServiceConfig() != null && serviceInstanceEntity.getNeedReloadServiceConfig()) {
             serviceInstanceEntity.setNeedReloadServiceConfig(Boolean.FALSE);
+            serviceInstanceRepository.save(serviceInstanceEntity);
         }
-        if (serviceInstanceEntity.getNeedReloadMonitorConfig() != null && serviceInstanceEntity.getNeedReloadMonitorConfig()) {
-            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
+        List<ServiceRoleInstanceEntity> serviceRoleInstanceEntities = roleInstanceRepository.findByServiceInstanceId(serviceInstanceId).stream()
+                .filter(roleInstance -> ObjectUtil.isNotEmpty(roleInstance.getNeedReloadMonitorConfig()) && roleInstance.getNeedReloadMonitorConfig())
+                .peek(roleInstance -> roleInstance.setNeedReloadMonitorConfig(Boolean.FALSE))
+                .collect(Collectors.toList());
+        if (CollUtil.isNotEmpty(serviceRoleInstanceEntities)) {
+            roleInstanceRepository.saveAll(serviceRoleInstanceEntities);
         }
-
         return ResultDTO.success(null);
     }
 
@@ -480,10 +484,14 @@ public class ClusterServiceController {
         if (serviceInstanceEntity.getNeedReloadServiceConfig() != null && serviceInstanceEntity.getNeedReloadServiceConfig()) {
             serviceInstanceEntity.setNeedReloadServiceConfig(Boolean.FALSE);
         }
-        if (serviceInstanceEntity.getNeedReloadMonitorConfig() != null && serviceInstanceEntity.getNeedReloadMonitorConfig()) {
-            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
-        }
         serviceInstanceRepository.save(serviceInstanceEntity);
+        List<ServiceRoleInstanceEntity> serviceRoleInstanceEntities = roleInstanceRepository.findByServiceInstanceId(serviceInstanceId).stream()
+                .filter(roleInstance -> ObjectUtil.isNotEmpty(roleInstance.getNeedReloadMonitorConfig()) && roleInstance.getNeedReloadMonitorConfig())
+                .peek(roleInstance -> roleInstance.setNeedReloadMonitorConfig(Boolean.FALSE))
+                .collect(Collectors.toList());
+        if (CollUtil.isNotEmpty(serviceRoleInstanceEntities)) {
+            roleInstanceRepository.saveAll(serviceRoleInstanceEntities);
+        }
 
         return ResultDTO.success(null);
     }
@@ -503,12 +511,6 @@ public class ClusterServiceController {
         // 停止再启动时 更新状态
         if (serviceInstanceEntity.getNeedRestart() != null && serviceInstanceEntity.getNeedRestart()) {
             serviceInstanceEntity.setNeedRestart(Boolean.FALSE);
-        }
-        if (serviceInstanceEntity.getNeedReloadMonitorConfig() != null && serviceInstanceEntity.getNeedReloadMonitorConfig()) {
-            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
-            Integer monitorCommandId = commandHandler.buildServiceCommand(serviceInstanceEntities, serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_MONITOR_CONFIG);
-            //  调用workflow
-            cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, monitorCommandId);
         }
         serviceInstanceRepository.save(serviceInstanceEntity);
 

@@ -86,6 +86,12 @@ public class ServiceRoleInstanceEntity implements Serializable {
 
     private boolean needRestart;
 
+    /**
+     * 是否需要更新监控配置
+     */
+    private Boolean needReloadMonitorConfig;
+
+
     private boolean isDecommission;
 
 
