@@ -28,6 +28,7 @@ import org.dromara.cloudeon.service.CommandHandler;
 import org.dromara.cloudeon.service.KubeService;
 import org.dromara.cloudeon.utils.K8sUtil;
 import org.springframework.beans.BeanUtils;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -238,9 +239,9 @@ public class ClusterRoleController {
         // 更新数据
         for (AddServiceRoleReq.UpdateServiceRole role : req.getRoles()) {
             String stackRoleName = role.getStackRoleName();
-            StackServiceRoleEntity stackServiceRole = stackServiceRoleRepository.findByServiceIdAndName(stackServiceId, stackRoleName);
+            StackServiceRoleEntity stackServiceRole = stackServiceRoleRepository.findByServiceIdAndLabel(stackServiceId, stackRoleName);
             if (stackServiceRole == null) {
-                throw new IllegalArgumentException("找不到服务角色: " + stackRoleName);
+                throw new RuntimeException("找不到服务角色: " + stackRoleName);
             }
             // 检查是否包含hdfs的nameNode
             if (HDFS_STACK_SERVICE_NAME.equals(serviceInstanceEntity.getLabel()) && HDFS_ROLE_NAME_NODE.equals(stackRoleName)) {
@@ -255,7 +256,7 @@ public class ClusterRoleController {
             if (YARN_STACK_SERVICE_NAME.equals(serviceInstanceEntity.getLabel()) && YARN_ROLE_RESOURCEMANAGER.equals(stackRoleName)) {
                 serviceInstanceEntity.setNeedRestart(Boolean.TRUE);
             }
-            updateServiceRoleInstance(req, serviceInstanceEntity, stackServiceId);
+            updateServiceRoleInstance(role, serviceInstanceEntity, stackServiceRole);
         }
         // 更新状态
         serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.TRUE);
@@ -263,26 +264,17 @@ public class ClusterRoleController {
         return ResultDTO.success(null);
     }
 
-    public void updateServiceRoleInstance(AddServiceRoleReq req, ServiceInstanceEntity serviceInstance, Integer stackServiceId) {
-        // 更新数据
-        for (AddServiceRoleReq.UpdateServiceRole role : req.getRoles()) {
-            String stackRoleName = role.getStackRoleName();
-            StackServiceRoleEntity stackServiceRole = stackServiceRoleRepository.findByServiceIdAndName(stackServiceId, stackRoleName);
-            if (stackServiceRole == null) {
-                throw new IllegalArgumentException("找不到服务角色: " + stackRoleName);
-            }
+    private void updateServiceRoleInstance(AddServiceRoleReq.UpdateServiceRole role, ServiceInstanceEntity serviceInstanceEntity, StackServiceRoleEntity stackServiceRole) {
+        List<ServiceRoleInstanceEntity> newInstances = role.getNodeIds().stream()
+                .map(nodeId -> createRoleInstance(serviceInstanceEntity, stackServiceRole, nodeId))
+                .collect(Collectors.toList());
+        List<ServiceRoleInstanceEntity> savedInstances = roleInstanceRepository.saveAllAndFlush(newInstances);
 
-            List<ServiceRoleInstanceEntity> newInstances = role.getNodeIds().stream()
-                    .map(nodeId -> createRoleInstance(serviceInstance, stackServiceRole, nodeId))
-                    .collect(Collectors.toList());
-            List<ServiceRoleInstanceEntity> savedInstances = roleInstanceRepository.saveAllAndFlush(newInstances);
-
-            List<ServiceRoleInstanceWebuisEntity> webUis = savedInstances.stream()
-                    .filter(instance -> StrUtil.isNotBlank(stackServiceRole.getLinkExpression()))
-                    .map(instance -> createWebUiEntity(instance, stackServiceRole))
-                    .collect(Collectors.toList());
-            roleInstanceWebUisRepository.saveAll(webUis);
-        }
+        List<ServiceRoleInstanceWebuisEntity> webUis = savedInstances.stream()
+                .filter(instance -> StrUtil.isNotBlank(stackServiceRole.getLinkExpression()))
+                .map(instance -> createWebUiEntity(instance, stackServiceRole))
+                .collect(Collectors.toList());
+        roleInstanceWebUisRepository.saveAll(webUis);
     }
 
     private ServiceRoleInstanceEntity createRoleInstance(ServiceInstanceEntity serviceInstance, StackServiceRoleEntity role, Integer nodeId) {
@@ -340,6 +332,7 @@ public class ClusterRoleController {
     /**
      * 等待删除角色信息
      */
+    @Transactional
     @PostMapping("/deleteRole")
     public ResultDTO<Void> deleteServiceRoleInstance(Integer roleInstanceId) {
         ServiceRoleInstanceEntity roleInstanceInfo = roleInstanceRepository.findById(roleInstanceId).get();
@@ -367,11 +360,18 @@ public class ClusterRoleController {
             }
             serviceInstanceEntity.setNeedRestart(Boolean.TRUE);
         }
+        // 删除角色相关
+        roleInstanceRepository.deleteById(roleInstanceId);
+        roleInstanceWebUisRepository.deleteByServiceRoleInstanceId(roleInstanceId);
+
         // 更新monitor
-        serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
-        Integer monitorCommandId = commandHandler.buildServiceCommand(Collections.singletonList(serviceInstanceEntity), serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_MONITOR_CONFIG);
-        //  调用workflow
-        cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, monitorCommandId);
+        if (serviceInstanceEntity.getNeedReloadMonitorConfig() != null && !serviceInstanceEntity.getNeedReloadMonitorConfig()) {
+            serviceInstanceEntity.setNeedReloadMonitorConfig(Boolean.FALSE);
+            Integer monitorCommandId = commandHandler.buildServiceCommand(Collections.singletonList(serviceInstanceEntity), serviceInstanceEntity.getClusterId(), CommandType.UPGRADE_MONITOR_CONFIG);
+            // 调用workflow
+            cloudeonVertx.eventBus().request(VERTX_COMMAND_ADDRESS, monitorCommandId);
+        }
+        serviceInstanceRepository.save(serviceInstanceEntity);
         return ResultDTO.success(null);
     }
 

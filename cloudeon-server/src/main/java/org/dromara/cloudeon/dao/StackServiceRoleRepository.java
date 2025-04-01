@@ -30,4 +30,6 @@ public interface StackServiceRoleRepository extends JpaRepository<StackServiceRo
     public List<StackServiceRoleEntity> findByServiceIdOrderBySortNum(Integer serviceId);
 
     StackServiceRoleEntity findByServiceIdAndName(Integer serviceId, String name);
+
+    StackServiceRoleEntity findByServiceIdAndLabel(Integer serviceId, String label);
 }
