@@ -39,7 +39,7 @@ public class ClusterNodeServiceRoleVO implements Serializable {
     /**
      * 总内存
      */
-    private Integer totalMem;
+    private String totalMem;
 
 
     /**
