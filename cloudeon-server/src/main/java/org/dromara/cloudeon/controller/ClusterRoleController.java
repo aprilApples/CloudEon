@@ -109,7 +109,7 @@ public class ClusterRoleController {
     public ResultDTO<ServiceRoleIconVO> listCurrentServiceRoleInfos(Integer serviceInstanceId) {
         ServiceInstanceEntity serviceInstanceEntity = validateAndLoadServiceInstance(serviceInstanceId);
         Integer stackServiceId = serviceInstanceEntity.getStackServiceId();
-        List<StackServiceRoleEntity> stackServiceRoleInfos = stackServiceRoleRepository.findByServiceIdAndStackId(serviceInstanceId, stackServiceId);
+        List<StackServiceRoleEntity> stackServiceRoleInfos = stackServiceRoleRepository.findByServiceIdOrderBySortNum(stackServiceId);
         List<String> stackServiceRoleLabels = stackServiceRoleInfos.stream()
                 .filter(item -> RoleType.DEPLOYMENT.equals(RoleType.getRoleType(item.getType())))
                 .map(StackServiceRoleEntity::getLabel).collect(Collectors.toList());
@@ -220,6 +220,7 @@ public class ClusterRoleController {
 
         nodeServiceRoleInfo.setExistingRoles(existingRoles);
         nodeServiceRoleInfo.setCurrentRoles(currentRoles);
+        nodeServiceRoleInfo.setAddRoles(Collections.emptyList());
         return nodeServiceRoleInfo;
     }
 
